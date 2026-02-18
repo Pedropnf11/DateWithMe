@@ -4,7 +4,7 @@ import Create from './pages/Create';
 
 import Invite from './pages/Invite';
 import Result from './pages/Result';
-import FlirtPreviewPage from './pages/FlirtPreviewPage';
+import FlirtPreviewPage from './pages/Flirtdeckpage';
 function App() {
   return (
     <Router>
@@ -13,6 +13,8 @@ function App() {
         <Route path="/criar" element={<Create />} />
         <Route path="/convite/:id" element={<Invite />} />
         <Route path="/resultado/:id" element={<Result />} />
+        <Route path="/flirt-deck" element={<FlirtPreviewPage />} />
+        <Route path="/flirt-deck/:id" element={<FlirtPreviewPage />} />
         <Route path="/flirt-preview" element={<FlirtPreviewPage />} />
       </Routes>
     </Router>

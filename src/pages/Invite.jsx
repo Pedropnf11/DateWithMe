@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -6,34 +5,53 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Check, X, Loader2, PartyPopper, GripVertical, ChevronRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-// ─── Drag-to-Rank Component ──────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// HELPER: resolve which steps are active based on answers so far
+// Steps with showIf are only included if the referenced answer
+// contains the required timeSlot value.
+// ─────────────────────────────────────────────────────────────────
+function resolveActiveSteps(allSteps, answers) {
+    return allSteps.filter(step => {
+        if (!step.showIf) return true; // always show steps without condition
+
+        const { stepId, timeSlot } = step.showIf;
+        const answer = answers[stepId]; // e.g. { date: '2026-03-15', timeSlot: 'morning' }
+        if (!answer) return false;     // not answered yet — hide for now
+
+        const chosen = answer.timeSlot ?? answer;
+        return timeSlot.includes(chosen);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RankingPicker — drag-to-rank
+// ─────────────────────────────────────────────────────────────────
 function RankingPicker({ options, onConfirm }) {
     const [ranked, setRanked] = useState(
-        options.filter(o => !o.excluded).map((opt, i) => ({ ...opt, _id: i }))
+        options.map((opt, i) => ({ ...opt, _id: i }))
     );
     const dragItem = useRef(null);
     const dragOverItem = useRef(null);
 
     const handleDragStart = (idx) => { dragItem.current = idx; };
     const handleDragEnter = (idx) => { dragOverItem.current = idx; };
-
     const handleDragEnd = () => {
         const from = dragItem.current;
         const to = dragOverItem.current;
         if (from === null || to === null || from === to) return;
-
-        const newRanked = [...ranked];
-        const [moved] = newRanked.splice(from, 1);
-        newRanked.splice(to, 0, moved);
-        setRanked(newRanked);
+        const next = [...ranked];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        setRanked(next);
         dragItem.current = null;
         dragOverItem.current = null;
     };
 
     return (
         <div className="space-y-4 w-full">
-            <p className="text-sm font-bold text-gray-500 text-center">Drag to rank from your favourite to least favourite 👆</p>
-
+            <p className="text-sm font-bold text-gray-500 text-center">
+                Drag to rank from favourite to least favourite 👆
+            </p>
             <div className="space-y-3">
                 {ranked.map((opt, idx) => (
                     <div
@@ -45,27 +63,19 @@ function RankingPicker({ options, onConfirm }) {
                         onDragOver={(e) => e.preventDefault()}
                         className="flex items-center gap-3 bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-3 cursor-grab active:cursor-grabbing active:shadow-lg active:border-pink-300 transition-all select-none"
                     >
-                        {/* Rank number */}
                         <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0">
                             {idx + 1}
                         </div>
-
-                        {/* Image */}
                         {opt.image && (
                             <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-100">
                                 <img src={opt.image} className="w-full h-full object-cover" alt={opt.label} />
                             </div>
                         )}
-
-                        {/* Label */}
                         <span className="flex-1 font-bold text-gray-700 text-base">{opt.label}</span>
-
-                        {/* Drag handle */}
                         <GripVertical size={20} className="text-gray-300 shrink-0" />
                     </div>
                 ))}
             </div>
-
             <button
                 onClick={() => onConfirm(ranked.map(o => o.label))}
                 className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2"
@@ -76,99 +86,146 @@ function RankingPicker({ options, onConfirm }) {
     );
 }
 
-// ─── Calendar Picker (Recipient view) ────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// CalendarPicker — with optional time slots
+// ─────────────────────────────────────────────────────────────────
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MONTH_NAMES = ['JAN', 'FEV', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 function CalendarPicker({ step, onConfirm }) {
-    const [selected, setSelected] = useState(null);
-    const offerFullCalendar = step.config?.offerFullCalendar;
-    const availableDates = step.config?.selectedDates || [];
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedSlot, setSelectedSlot] = useState(null);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(today);
-    end.setDate(today.getDate() + 30);
+    const config = step.config || {};
+    const availableDates = config.selectedDates || [];
+    const offerFullCalendar = config.offerFullCalendar;
+    const activeSlots = (config.timeSlots || []).filter(s => s.active);
+    const hasSlots = activeSlots.length > 0;
 
-    // Build grid
+    // Build 30-day calendar grid
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(today); end.setDate(today.getDate() + 30);
     const startOfGrid = new Date(today);
-    const dow = (today.getDay() + 6) % 7;
-    startOfGrid.setDate(today.getDate() - dow);
+    startOfGrid.setDate(today.getDate() - ((today.getDay() + 6) % 7));
     const endOfGrid = new Date(end);
-    const edow = (end.getDay() + 6) % 7;
-    endOfGrid.setDate(end.getDate() + (6 - edow));
+    endOfGrid.setDate(end.getDate() + (6 - ((end.getDay() + 6) % 7)));
 
     const days = [];
     const cur = new Date(startOfGrid);
     while (cur <= endOfGrid) {
         const ds = cur.toISOString().split('T')[0];
         days.push({
-            date: new Date(cur),
-            dateStr: ds,
+            date: new Date(cur), dateStr: ds,
             inRange: cur >= today && cur <= end,
-            isAvailable: offerFullCalendar ? (cur >= today && cur <= end) : availableDates.includes(ds),
+            isAvailable: offerFullCalendar
+                ? cur >= today && cur <= end
+                : availableDates.includes(ds),
         });
         cur.setDate(cur.getDate() + 1);
     }
 
-    const startMonth = MONTH_NAMES[today.getMonth()];
-    const endMonth = MONTH_NAMES[end.getMonth()];
-    const year = end.getFullYear();
-    const rangeLabel = startMonth === endMonth ? `${startMonth}. ${year}` : `${startMonth}. → ${endMonth}. ${year}`;
+    const rangeLabel = (() => {
+        const s = MONTH_NAMES[today.getMonth()];
+        const e = MONTH_NAMES[end.getMonth()];
+        return s === e ? `${s}. ${end.getFullYear()}` : `${s}. → ${e}. ${end.getFullYear()}`;
+    })();
+
+    const canConfirm = selectedDate && (!hasSlots || selectedSlot);
+
+    const handleConfirm = () => {
+        if (!canConfirm) return;
+        onConfirm({
+            date: selectedDate,
+            timeSlot: selectedSlot ?? null,
+        });
+    };
 
     return (
-        <div className="space-y-4 w-full">
-            <p className="text-sm text-gray-500 font-medium text-center">Select a date that works for you:</p>
-            <p className="text-xs text-gray-400 text-center">Next 30 days: {rangeLabel}</p>
-
-            <div className="grid grid-cols-7 mb-1">
-                {WEEKDAYS.map(d => (
-                    <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
-                ))}
+        <div className="space-y-5 w-full">
+            {/* Calendar */}
+            <div>
+                <p className="text-xs text-gray-400 text-center mb-3">
+                    Next 30 days: {rangeLabel}
+                </p>
+                <div className="grid grid-cols-7 mb-1">
+                    {WEEKDAYS.map(d => (
+                        <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                    {days.map(({ date, dateStr, inRange, isAvailable }) => {
+                        if (!inRange) return (
+                            <div key={dateStr} className="aspect-square flex items-center justify-center">
+                                <span className="text-sm text-gray-200">{date.getDate()}</span>
+                            </div>
+                        );
+                        const isSelected = selectedDate === dateStr;
+                        return (
+                            <button
+                                key={dateStr}
+                                disabled={!isAvailable}
+                                onClick={() => { setSelectedDate(dateStr); setSelectedSlot(null); }}
+                                className={`aspect-square flex items-center justify-center rounded-full text-sm font-bold transition-all
+                                    ${isSelected
+                                        ? 'bg-pink-500 text-white shadow-md shadow-pink-300'
+                                        : isAvailable
+                                            ? 'text-gray-700 hover:bg-pink-50 hover:text-pink-500'
+                                            : 'text-gray-200 cursor-not-allowed'
+                                    }`}
+                            >
+                                {date.getDate()}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
-                {days.map(({ date, dateStr, inRange, isAvailable }) => {
-                    const dayNum = date.getDate();
-                    const isSelected = selected === dateStr;
-
-                    if (!inRange) {
-                        return <div key={dateStr} className="aspect-square flex items-center justify-center">
-                            <span className="text-sm text-gray-200">{dayNum}</span>
-                        </div>;
-                    }
-
-                    return (
-                        <button
-                            key={dateStr}
-                            disabled={!isAvailable}
-                            onClick={() => setSelected(dateStr)}
-                            className={`aspect-square flex items-center justify-center rounded-full text-sm font-bold transition-all
-                                ${isSelected
-                                    ? 'bg-pink-500 text-white shadow-md shadow-pink-300'
-                                    : isAvailable
-                                        ? 'text-gray-700 hover:bg-pink-50 hover:text-pink-500'
-                                        : 'text-gray-200 cursor-not-allowed'
-                                }`}
-                        >
-                            {dayNum}
-                        </button>
-                    );
-                })}
-            </div>
+            {/* Time slot picker — only shown after a date is selected */}
+            {hasSlots && selectedDate && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-3"
+                >
+                    <p className="text-sm font-bold text-gray-600 text-center">
+                        What time works for you?
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                        {activeSlots.map(slot => {
+                            const isChosen = selectedSlot === slot.id;
+                            return (
+                                <button
+                                    key={slot.id}
+                                    onClick={() => setSelectedSlot(slot.id)}
+                                    className={`p-4 rounded-2xl border-2 text-left transition-all
+                                        ${isChosen
+                                            ? 'border-pink-500 bg-pink-50 shadow-md shadow-pink-200'
+                                            : 'border-gray-100 bg-white hover:border-pink-200'
+                                        }`}
+                                >
+                                    <div className="text-2xl mb-1">{slot.emoji}</div>
+                                    <div className="font-black text-gray-800 text-sm">{slot.label}</div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+            )}
 
             <button
-                disabled={!selected}
-                onClick={() => onConfirm(selected)}
+                disabled={!canConfirm}
+                onClick={handleConfirm}
                 className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 mt-2"
             >
-                Confirm Date <ChevronRight size={20} className="inline" />
+                Confirm {selectedSlot ? `– ${activeSlots.find(s => s.id === selectedSlot)?.label}` : ''} <ChevronRight size={20} className="inline" />
             </button>
         </div>
     );
 }
 
-// ─── Rating Picker ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// RatingPicker
+// ─────────────────────────────────────────────────────────────────
 function RatingPicker({ step, onConfirm }) {
     const [rating, setRating] = useState(0);
     const [hovered, setHovered] = useState(0);
@@ -194,12 +251,9 @@ function RatingPicker({ step, onConfirm }) {
                     </button>
                 ))}
             </div>
-
-            {/* GIF below stars */}
             {step.gif && (
-                <img src={step.gif} alt="Rating vibe" className="mx-auto h-48 rounded-2xl shadow-lg object-cover max-w-full" />
+                <img src={step.gif} alt="vibe" className="mx-auto h-48 rounded-2xl shadow-lg object-cover max-w-full" />
             )}
-
             {rating > 0 && (
                 <p className="text-pink-500 font-bold text-lg">{rating} / {max} ⭐</p>
             )}
@@ -214,13 +268,98 @@ function RatingPicker({ step, onConfirm }) {
     );
 }
 
-// ─── Main Invite Component ────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// QuestionStep — growing YES / NÃO unlocks after N clicks
+// ─────────────────────────────────────────────────────────────────
+function QuestionStep({ step, onAnswer }) {
+    const [noClicks, setNoClicks] = useState(0);
+    const [noPos, setNoPos] = useState({ x: null, y: null });
+    const unlockAfter = step.config?.noUnlocksAfter ?? 0; // 0 = always unlocked
+    const isNoLocked = unlockAfter > 0 && noClicks < unlockAfter;
+    const yesScale = 1 + noClicks * 0.06;
+
+    const noMessages = [
+        "Are you sure? 🥺",
+        "Think again...",
+        "Really though? 😭",
+        "Last chance...",
+        `${unlockAfter - noClicks} more clicks to unlock...`,
+        "Fine... 😔",
+    ];
+    const noMsg = noMessages[Math.min(noClicks, noMessages.length - 1)];
+
+    const handleNo = () => {
+        const newCount = noClicks + 1;
+        setNoClicks(newCount);
+
+        // Move button to random position
+        setNoPos({
+            x: Math.random() * 65 + 5,
+            y: Math.random() * 65 + 5,
+        });
+    };
+
+    const submitNo = () => {
+        if (!isNoLocked) onAnswer(step.id, 'no');
+    };
+
+    return (
+        <div className="space-y-6 w-full text-center">
+            {step.gif && (
+                <img src={step.gif} alt="Vibe" className="w-full h-72 object-contain rounded-3xl shadow-lg" />
+            )}
+            <h2 className="text-3xl font-black text-gray-800 leading-tight">{step.title}</h2>
+
+            {/* YES */}
+            <button
+                onClick={() => onAnswer(step.id, 'yes')}
+                style={{ transform: `scale(${Math.min(yesScale, 2.5)})` }}
+                className="w-full py-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xl rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all origin-center"
+            >
+                SIMMMMM! 💕
+            </button>
+
+            {/* NO — floating when noClicks > 0 */}
+            <button
+                onClick={isNoLocked ? handleNo : submitNo}
+                style={noClicks > 0 ? {
+                    position: 'fixed',
+                    left: `${noPos.x}%`,
+                    top: `${noPos.y}%`,
+                    zIndex: 50,
+                    transition: 'all 0.15s',
+                    opacity: isNoLocked ? 0.6 : 1,
+                } : {}}
+                className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all
+                    ${noClicks === 0
+                        ? 'w-full bg-white border-2 border-gray-200 text-gray-500 hover:border-gray-300'
+                        : 'bg-white border border-gray-200 text-gray-500 shadow-md'
+                    }
+                    ${isNoLocked ? 'cursor-not-allowed' : 'cursor-pointer'}
+                `}
+            >
+                {noClicks === 0 ? 'No...' : noMsg}
+            </button>
+
+            {noClicks > 0 && isNoLocked && (
+                <p className="text-xs text-gray-400 mt-2">
+                    (The No button is running away 😂)
+                </p>
+            )}
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MAIN — Invite page
+// ─────────────────────────────────────────────────────────────────
 export default function Invite() {
     const { id } = useParams();
     const [invite, setInvite] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState({});
+    const [activeSteps, setActiveSteps] = useState([]);
+    const [currentStep, setCurrentStep] = useState(0);
     const [showResult, setShowResult] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -228,14 +367,14 @@ export default function Invite() {
         async function fetchInvite() {
             const { data, error } = await supabase
                 .from('invites')
-                .select('*')
+                .select('id, content, status')
                 .eq('id', id)
                 .single();
-
-            if (error) {
-                console.error('Erro ao carregar convite:', error);
-            } else {
+            if (!error && data) {
                 setInvite(data);
+                // Initial active steps = all non-conditional steps
+                const initial = resolveActiveSteps(data.content.steps, {});
+                setActiveSteps(initial);
             }
             setLoading(false);
         }
@@ -246,125 +385,100 @@ export default function Invite() {
         const newAnswers = { ...answers, [questionId]: answer };
         setAnswers(newAnswers);
 
-        if (currentStep < invite.content.steps.length - 1) {
-            setCurrentStep(prev => prev + 1);
-        } else {
+        // Re-resolve active steps with updated answers
+        const allSteps = invite.content.steps;
+        const newActive = resolveActiveSteps(allSteps, newAnswers);
+        setActiveSteps(newActive);
+
+        const nonSummarySteps = newActive.filter(s => s.type !== 'summary');
+        const isLast = currentStep >= nonSummarySteps.length - 1;
+
+        if (isLast) {
             setShowResult(true);
+        } else {
+            setCurrentStep(prev => prev + 1);
         }
     };
 
     const submitResponse = async (accepted) => {
         setIsSubmitting(true);
-
         if (accepted) {
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#FF69B4', '#FFD700', '#FF1493']
-            });
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FF69B4', '#FFD700', '#FF1493'] });
         }
-
-        const { error } = await supabase
-            .from('responses')
-            .insert([{
-                invite_id: id,
-                content: { accepted, answers }
-            }]);
-
+        const { error } = await supabase.rpc('submit_response', {
+            invite_uuid: id,
+            p_decisao: accepted ? 'sim' : 'nao',
+            p_answers: answers,
+            p_mensagem: null,
+        });
         if (error) {
             alert('Erro ao enviar resposta. Tenta novamente!');
-            setIsSubmitting(false);
-        } else {
-            alert(accepted ? "YAY! Resposta enviada! 🎉" : "Resposta enviada. 😔");
-            setIsSubmitting(false);
         }
+        setIsSubmitting(false);
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-pink-50 flex items-center justify-center">
-                <Loader2 className="animate-spin text-pink-500" size={48} />
-            </div>
-        );
-    }
+    // ── Loading ────────────────────────────────────────────────
+    if (loading) return (
+        <div className="min-h-screen bg-pink-50 flex items-center justify-center">
+            <Loader2 className="animate-spin text-pink-500" size={48} />
+        </div>
+    );
 
-    if (!invite) {
-        return (
-            <div className="min-h-screen bg-pink-50 flex items-center justify-center text-center p-4">
-                <div>
-                    <h1 className="text-4xl mb-4">💔</h1>
-                    <p className="text-gray-600 text-xl font-bold">Oops! This invite doesn't exist or has expired.</p>
+    // ── Not found ──────────────────────────────────────────────
+    if (!invite) return (
+        <div className="min-h-screen bg-pink-50 flex items-center justify-center text-center p-4">
+            <div>
+                <h1 className="text-4xl mb-4">💔</h1>
+                <p className="text-gray-600 text-xl font-bold">This invite doesn't exist or has expired.</p>
+            </div>
+        </div>
+    );
+
+    // ── Final result screen ────────────────────────────────────
+    if (showResult) return (
+        <div className="min-h-screen bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center p-6 text-white font-sans">
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white/10 backdrop-blur-md p-8 rounded-[3rem] text-center max-w-md w-full border border-white/20 shadow-2xl"
+            >
+                <PartyPopper size={64} className="mx-auto mb-6 text-yellow-300 animate-bounce" />
+                <h1 className="text-4xl font-black mb-4">All done!</h1>
+                <p className="text-xl mb-12 font-medium opacity-90">
+                    Will you accept this special invitation?
+                </p>
+                <div className="flex gap-4 justify-center">
+                    <button
+                        onClick={() => submitResponse(false)}
+                        disabled={isSubmitting}
+                        className="px-8 py-4 bg-white/20 hover:bg-white/30 rounded-2xl font-bold transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                        <X size={18} /> No...
+                    </button>
+                    <button
+                        onClick={() => submitResponse(true)}
+                        disabled={isSubmitting}
+                        className="px-8 py-4 bg-white text-pink-600 hover:scale-105 rounded-2xl font-black text-xl shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                        <Check strokeWidth={4} size={22} /> YES! 🎉
+                    </button>
                 </div>
-            </div>
-        );
-    }
+            </motion.div>
+        </div>
+    );
 
-    if (showResult) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center p-6 text-white font-sans">
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white/10 backdrop-blur-md p-8 rounded-[3rem] text-center max-w-md w-full border border-white/20 shadow-2xl"
-                >
-                    <PartyPopper size={64} className="mx-auto mb-6 text-yellow-300 animate-bounce" />
-                    <h1 className="text-4xl font-black mb-4">All done!</h1>
-                    <p className="text-xl mb-12 font-medium opacity-90">
-                        Will you accept this special invitation?
-                    </p>
-
-                    <div className="flex gap-4 justify-center">
-                        <button
-                            onClick={() => submitResponse(false)}
-                            disabled={isSubmitting}
-                            className="px-8 py-4 bg-white/20 hover:bg-white/30 rounded-2xl font-bold transition-all disabled:opacity-50 flex items-center gap-2"
-                        >
-                            <X size={18} /> No...
-                        </button>
-                        <button
-                            onClick={() => submitResponse(true)}
-                            disabled={isSubmitting}
-                            className="px-8 py-4 bg-white text-pink-600 hover:scale-105 rounded-2xl font-black text-xl shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
-                        >
-                            <Check strokeWidth={4} size={22} /> YES!
-                        </button>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    }
-
-    const step = invite.content.steps[currentStep];
+    // ── Active step render ─────────────────────────────────────
+    const visibleSteps = activeSteps.filter(s => s.type !== 'summary');
+    const step = visibleSteps[currentStep];
+    if (!step) return null;
 
     const renderStep = () => {
         switch (step.type) {
+
             case 'question':
-                return (
-                    <div className="space-y-6 w-full text-center">
-                        {step.gif && (
-                            <img src={step.gif} alt="Vibe" className="w-full h-72 object-contain rounded-3xl shadow-lg" />
-                        )}
-                        <h2 className="text-3xl font-black text-gray-800 leading-tight">{step.title}</h2>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => handleAnswer(step.id, 'yes')}
-                                className="flex-1 py-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xl rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-                            >
-                                YES! 💕
-                            </button>
-                            <button
-                                onClick={() => handleAnswer(step.id, 'no')}
-                                className="flex-1 py-5 bg-white border-2 border-gray-200 text-gray-500 font-bold rounded-2xl hover:border-gray-300 transition-all"
-                            >
-                                No...
-                            </button>
-                        </div>
-                    </div>
-                );
+                return <QuestionStep step={step} onAnswer={handleAnswer} />;
 
             case 'happy_gif':
-                // Auto-advance: just show the gif and a continue button
                 return (
                     <div className="space-y-6 w-full text-center">
                         {step.gif && (
@@ -384,6 +498,9 @@ export default function Invite() {
                 return (
                     <div className="space-y-4 w-full">
                         <h2 className="text-2xl font-black text-gray-800 text-center">{step.title}</h2>
+                        {step.subtitle && (
+                            <p className="text-sm text-gray-400 text-center">{step.subtitle}</p>
+                        )}
                         <RankingPicker
                             options={step.options || []}
                             onConfirm={(ranked) => handleAnswer(step.id, ranked)}
@@ -397,7 +514,7 @@ export default function Invite() {
                         <h2 className="text-2xl font-black text-gray-800 text-center">{step.title}</h2>
                         <CalendarPicker
                             step={step}
-                            onConfirm={(date) => handleAnswer(step.id, date)}
+                            onConfirm={(val) => handleAnswer(step.id, val)}
                         />
                     </div>
                 );
@@ -416,7 +533,7 @@ export default function Invite() {
             default:
                 return (
                     <div className="text-center">
-                        <p className="text-gray-500">Unknown step type: {step.type}</p>
+                        <p className="text-gray-400 text-sm">Unknown step: {step.type}</p>
                         <button onClick={() => handleAnswer(step.id, null)} className="mt-4 px-6 py-3 bg-pink-500 text-white rounded-xl font-bold">
                             Next
                         </button>
@@ -429,7 +546,7 @@ export default function Invite() {
         <div className="min-h-screen bg-pink-50 font-sans flex flex-col items-center justify-center p-6">
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={currentStep}
+                    key={step.id}
                     initial={{ x: 50, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: -50, opacity: 0 }}
@@ -441,7 +558,7 @@ export default function Invite() {
             </AnimatePresence>
 
             <div className="mt-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                Step {currentStep + 1} of {invite.content.steps.length}
+                Step {currentStep + 1} of {visibleSteps.length}
             </div>
         </div>
     );

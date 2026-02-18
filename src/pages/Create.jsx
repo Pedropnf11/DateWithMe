@@ -50,9 +50,9 @@ function CalendarStep({ step, updateQuestion }) {
     end.setDate(today.getDate() + 30);
 
     const selectedDates = step.config?.selectedDates || [];
-    const selectedTimes = step.config?.selectedTimes || {}; // { "2026-02-20": { from: "18:00", to: "22:00" } }
+    const selectedTimes = step.config?.selectedTimes || {};
     const offerFullCalendar = step.config?.offerFullCalendar || false;
-    const fullCalendarTime = step.config?.fullCalendarTime || { from: '18:00', to: '23:00' };
+    const calendarMessage = step.config?.calendarMessage || 'Para ti arranjo sempre tempo 💕';
 
     const toggleDate = (dateStr) => {
         const current = step.config?.selectedDates || [];
@@ -81,6 +81,12 @@ function CalendarStep({ step, updateQuestion }) {
     const updateFullCalendarTime = (field, value) => {
         updateQuestion(step.id, {
             config: { ...step.config, fullCalendarTime: { ...fullCalendarTime, [field]: value } }
+        });
+    };
+
+    const updateCalendarMessage = (val) => {
+        updateQuestion(step.id, {
+            config: { ...step.config, calendarMessage: val }
         });
     };
 
@@ -207,32 +213,17 @@ function CalendarStep({ step, updateQuestion }) {
 
             {offerFullCalendar && (
                 <div className="bg-pink-50 rounded-2xl p-6 text-center border border-pink-100 space-y-4">
-                    <p className="text-pink-600 font-black text-lg">Para ti arranjo sempre tempo 💕</p>
+                    <input
+                        value={calendarMessage}
+                        onChange={(e) => updateCalendarMessage(e.target.value)}
+                        className="w-full text-center bg-transparent text-pink-600 font-black text-lg outline-none border-b border-pink-200 focus:border-pink-500 pb-1"
+                        placeholder="Type your message..."
+                    />
                     <img
                         src="https://media1.tenor.com/m/afjI9QKGDTUAAAAC/blinking-wink.gif"
                         alt="Wink"
                         className="mx-auto h-40 rounded-2xl shadow-lg object-cover"
                     />
-                    <div className="space-y-2 pt-2">
-                        <p className="text-xs font-bold text-gray-500 uppercase">Default time range for any day</p>
-                        <div className="flex items-center gap-2 justify-center">
-                            <select
-                                value={fullCalendarTime.from}
-                                onChange={(e) => updateFullCalendarTime('from', e.target.value)}
-                                className="text-sm font-bold p-2 rounded-lg border border-pink-200 bg-white text-gray-700 outline-none focus:border-pink-500"
-                            >
-                                {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                            <span className="text-sm text-gray-400 font-bold">→</span>
-                            <select
-                                value={fullCalendarTime.to}
-                                onChange={(e) => updateFullCalendarTime('to', e.target.value)}
-                                className="text-sm font-bold p-2 rounded-lg border border-pink-200 bg-white text-gray-700 outline-none focus:border-pink-500"
-                            >
-                                {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>
