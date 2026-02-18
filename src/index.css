@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light;
+  /* Força Light Mode sempre */
+  color: #1f2937;
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove estilos globais que interferem com Tailwind */
+body {
+  margin: 0;
+  display: block;
+  /* Tailwind controla flex */
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+button {
+  border-radius: inherit;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  transition: none;
+}
+
+button:hover {
+  border-color: transparent;
+}
+
+button:focus,
+button:focus-visible {
+  outline: none;
+}

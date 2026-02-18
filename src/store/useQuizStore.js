@@ -1,0 +1,81 @@
+
+import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
+import { TEMPLATES } from '../data/templates';
+
+const useQuizStore = create((set, get) => ({
+    // Passo 1: Estado Inicial da Criação
+    currentStep: 0,
+    quizData: {
+        templateId: null,
+        title: '',
+        questions: [], // Lista de perguntas
+    },
+
+    // Ações para o "Date Builder"
+    setTemplate: (templateId) => {
+        const template = TEMPLATES[templateId];
+        if (template) {
+            set({
+                quizData: {
+                    templateId,
+                    title: template.label,
+                    // Mapeia os passos para o formato interno editável
+                    questions: (template.steps || template.questions).map(s => ({
+                        ...s,
+                        // Mantém todas as propriedades extra (gif, config, subtitle, options, type)
+                    }))
+                }
+            });
+        }
+    },
+
+    updateQuestion: (questionId, updates) => {
+        set(state => ({
+            quizData: {
+                ...state.quizData,
+                questions: state.quizData.questions.map(q =>
+                    q.id === questionId ? { ...q, ...updates } : q
+                )
+            }
+        }));
+    },
+
+    addGifToQuestion: (questionId, gifUrl) => {
+        get().updateQuestion(questionId, { gif: gifUrl });
+    },
+
+    // Passo 2: Guardar na DB
+    saveQuiz: async () => {
+        const { quizData } = get();
+
+        // Validação básica
+        if (!quizData.questions.length) return { error: 'Adiciona pelo menos uma pergunta!' };
+
+        const { data, error } = await supabase
+            .from('invites')
+            .insert([
+                {
+                    // O "content" é a tal coluna mágica JSONB
+                    content: {
+                        title: quizData.title,
+                        steps: quizData.questions
+                    },
+                    status: 'active'
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) return { error: error.message };
+
+        // Retorna os links gerados
+        return {
+            success: true,
+            publicLink: `/convite/${data.id}`,
+            privateLink: `/resultado/${data.id}?key=${data.creator_key}`
+        };
+    }
+}));
+
+export default useQuizStore;
