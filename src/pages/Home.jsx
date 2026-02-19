@@ -14,21 +14,21 @@ import FlirtDeck from './FlirtDeck';
 
 // ── Dados default do deck ────────────────────────────────────────
 const DEFAULT_DECK = {
-    intro: { name: 'Miguel', tagline: 'Not your average date. 😏', photo: null, gif: null },
+    intro: { name: 'Teu Nome', tagline: 'Não é um date qualquer. 😏', photo: null, gif: null },
     whyMe: [
-        { emoji: '🎯', title: 'I actually plan things', desc: 'Reservations made. Playlist ready.' },
-        { emoji: '🌙', title: 'Better in person', desc: 'This deck is already good.' },
-        { emoji: '🤝', title: 'Zero games', desc: 'What you see is what you get.' },
+        { emoji: '🎯', title: 'Eu planeio tudo', desc: 'Reservas feitas. Playlist pronta.' },
+        { emoji: '🌙', title: 'Melhor ao vivo', desc: 'Este deck já é bom, imagina eu.' },
+        { emoji: '🤝', title: 'Sem jogos', desc: 'O que vês é o que tens.' },
     ],
     funFacts: [
-        'I can make pancakes at 2am 🥞',
-        'I know every lyric 🎵',
-        'I never check my phone during movies 📵',
+        'Consigo fazer panquecas às 2 da manhã 🥞',
+        'Sei as letras todas desta música 🎵',
+        'Nunca mexo no telemóvel durante os filmes 📵',
     ],
     redFlags: [
-        { flag: 'I over-explain things', severity: 1 },
-        { flag: 'Terrible at replying to voice notes', severity: 2 },
-        { flag: "I'll rate restaurants internally", severity: 1 },
+        { flag: 'Explico as coisas demais', severity: 1 },
+        { flag: 'Terrível a responder a áudios', severity: 2 },
+        { flag: "Avalio restaurantes mentalmente", severity: 1 },
     ],
 };
 
@@ -109,7 +109,7 @@ export default function Home() {
         });
 
     const addWhyMe = () =>
-        setDeckData(d => ({ ...d, whyMe: [...d.whyMe, { emoji: '✨', title: 'New reason', desc: 'Describe it...' }] }));
+        setDeckData(d => ({ ...d, whyMe: [...d.whyMe, { emoji: '✨', title: 'Novo motivo', desc: 'Descreve aqui...' }] }));
 
     const removeWhyMe = (idx) =>
         setDeckData(d => ({ ...d, whyMe: d.whyMe.filter((_, i) => i !== idx) }));
@@ -122,7 +122,7 @@ export default function Home() {
         });
 
     const addFact = () =>
-        setDeckData(d => ({ ...d, funFacts: [...d.funFacts, 'New fun fact 🎉'] }));
+        setDeckData(d => ({ ...d, funFacts: [...d.funFacts, 'Novo facto curioso 🎉'] }));
 
     const removeFact = (idx) =>
         setDeckData(d => ({ ...d, funFacts: d.funFacts.filter((_, i) => i !== idx) }));
@@ -134,7 +134,7 @@ export default function Home() {
         });
 
     const addFlag = () =>
-        setDeckData(d => ({ ...d, redFlags: [...d.redFlags, { flag: 'New red flag', severity: 1 }] }));
+        setDeckData(d => ({ ...d, redFlags: [...d.redFlags, { flag: 'Nova red flag', severity: 1 }] }));
 
     const removeFlag = (idx) =>
         setDeckData(d => ({ ...d, redFlags: d.redFlags.filter((_, i) => i !== idx) }));
@@ -158,17 +158,6 @@ export default function Home() {
 
             if (error) throw error;
 
-            const url = `${window.location.origin}/flirt-deck/${data.id}`;
-            setGeneratedLink(url);
-            navigator.clipboard?.writeText(url).catch(() => { });
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2500);
-            window.open(url, '_blank');
-        } catch (err) {
-            console.error("Error saving flirt deck:", err);
-            // Fallback para link local se der erro na DB
-            const url = generateDeckLink(deckData);
-            setGeneratedLink(url);
         } finally {
             setIsSaving(false);
         }
@@ -190,8 +179,8 @@ export default function Home() {
             <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-pink-200 via-pink-50 to-white opacity-80" />
 
             {/* Top Banner */}
-            <div className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-center py-2 text-sm font-bold tracking-wide shadow-md">
-                ❤️ Free to use — No signup needed
+            <div className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-center py-2 text-sm font-bold tracking-wide shadow-md uppercase tracking-[0.1em]">
+                💌 Grátis. Sem registo. Sem desculpas para não surpreenderes.
             </div>
 
             {/* Navbar */}
@@ -199,12 +188,12 @@ export default function Home() {
                 <div className="bg-white/90 backdrop-blur-md rounded-full px-8 py-3 shadow-lg border border-pink-100 flex items-center justify-between w-full max-w-4xl">
                     <div className="font-extrabold text-2xl text-pink-600 tracking-tighter">DateWithMe</div>
                     <div className="flex gap-6 items-center">
-                        <a href="#" className="hidden md:block font-bold text-gray-500 hover:text-pink-500 text-sm transition-colors">FAQ</a>
+                        <a href="#" className="hidden md:block font-bold text-gray-500 hover:text-pink-500 text-sm transition-colors uppercase tracking-widest text-[10px]">Perguntas Frequentes</a>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-full font-bold text-sm shadow-md transition-all transform hover:scale-105"
+                            className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-full font-black text-xs shadow-md transition-all transform hover:scale-105 uppercase tracking-widest"
                         >
-                            GET STARTED
+                            COMEÇAR
                         </button>
                     </div>
                 </div>
@@ -218,28 +207,21 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0 }}
                         className="text-5xl md:text-7xl font-black text-gray-800 leading-[1.1] mb-6"
                     >
-                        Plan Your Next <br />
-                        <span className="text-gray-800">Unforgettable Date</span> <br />
-                        in Minutes
+                        Ela ainda não sabe o que aí vem.
                     </motion.h1>
-                    <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto md:mx-0 font-medium">
-                        We handle the details—you focus on the romance!
+                    <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
+                        Em menos de 3 minutos, crias um convite que ela vai guardar para sempre. Tu escolhes os detalhes — nós tratamos da magia.
                     </p>
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-8 py-5 rounded-full font-extrabold text-lg shadow-xl shadow-pink-500/30 hover:shadow-2xl transition-all uppercase tracking-wide w-full md:w-auto"
+                        className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-8 py-5 rounded-full font-black text-lg shadow-xl shadow-pink-500/30 hover:shadow-2xl transition-all uppercase tracking-wide w-full md:w-auto"
                     >
-                        CREATE DEMO INVITATION — NO SIGNUP NEEDED
+                        SURPREENDE-A AGORA — É GRÁTIS
                     </motion.button>
-                    <div className="mt-8 flex items-center justify-center md:justify-start gap-4 text-sm font-bold text-gray-500">
-                        <div className="flex -space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white" />
-                            <div className="w-8 h-8 rounded-full bg-gray-300 border-2 border-white" />
-                            <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-white" />
-                        </div>
-                        Join 87,459+ happy couples!
+                    <div className="mt-8 flex items-center justify-center md:justify-start gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-pink-400">
+                        ❤️Várias Pessoas já testaram, junta-te a elas!
                     </div>
                 </div>
 
@@ -256,13 +238,13 @@ export default function Home() {
             {/* How It Works */}
             <section className="text-center py-20 px-6">
                 <h2 className="text-3xl md:text-5xl font-black text-pink-600 mb-16 uppercase tracking-tight">
-                    How it Works: Choose Food, Activity & Time
+                    Tão fácil que até tu consegues
                 </h2>
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
-                        { step: 1, title: 'Create Invitation', desc: 'Choose your ideal date and time, select a meal, and even pick an activity if you wish.' },
-                        { step: 2, title: 'Share the Link', desc: 'We transform your choices into an adorable Invitation to send to your special someone.' },
-                        { step: 3, title: 'Get a Yes!', desc: 'Your loved one fills out the invitation, and you view their reply on your dashboard.' },
+                        { step: 1, title: 'Cria o Convite', desc: 'Escolhe o dia, a hora, o jantar e a actividade. Nós montamos tudo num convite lindo que parece que demorou horas a preparar. (Spoiler: não demorou.)' },
+                        { step: 2, title: 'Envia o Link', desc: 'Um link. Um clique. E ela recebe algo que nunca esperava. Assim tão simples — assim tão especial.' },
+                        { step: 3, title: 'Recebe o SIM', desc: 'Ela responde directamente no convite. Tu vês a resposta no teu painel. E a noite começa antes mesmo de começar.' },
                     ].map((item) => (
                         <div key={item.step} className="bg-white/60 p-10 rounded-[2rem] shadow-lg border border-pink-50 hover:bg-white transition-colors">
                             <div className="w-12 h-12 bg-pink-500 rounded-full text-white flex items-center justify-center font-bold text-xl mx-auto mb-6 shadow-lg shadow-pink-500/30">{item.step}</div>
@@ -275,12 +257,14 @@ export default function Home() {
 
             {/* Features */}
             <section className="text-center py-20 px-6 mb-20">
-                <h2 className="text-3xl md:text-5xl font-black text-pink-600 mb-16">DateWithMe Helps You Shine</h2>
+                <h2 className="text-3xl md:text-5xl font-black text-pink-600 mb-16 uppercase tracking-tight leading-tight">
+                    Porque os detalhes são o que ela vai contar às amigas
+                </h2>
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
-                        { icon: Star, title: 'Create Lasting Impressions', desc: 'Make every date memorable with unique experiences tailored to your style.' },
-                        { icon: Heart, title: 'Foster Authentic Romance', desc: 'Let every date be a celebration of your unique bond. We handle the details.' },
-                        { icon: Calendar, title: 'Save Time & Boost Confidence', desc: 'Eliminate second-guessing. Curated suggestions let you pick with confidence.' },
+                        { icon: Star, title: 'Uma impressão que fica', desc: 'Qualquer um marca um jantar. Tu vais marcar uma memória. Experiências pensadas ao pormenor, com o teu toque pessoal.' },
+                        { icon: Heart, title: 'Romance a sério, sem forçar', desc: 'Sem guiões. Sem awkward silences. Só os dois, num encontro que flui porque foi bem planeado.' },
+                        { icon: Calendar, title: 'Confiança em 3 minutos', desc: 'Acabou o "não sei o que fazer". Sugestões pensadas para impressionar — tu decides, nós garantimos que corre bem.' },
                     ].map((item, i) => (
                         <div key={i} className="bg-white/80 p-8 rounded-[2rem] shadow-sm hover:shadow-xl transition-shadow">
                             <item.icon size={48} className="mx-auto mb-6 text-orange-400 fill-orange-400" />
@@ -298,29 +282,30 @@ export default function Home() {
                     <div className="relative z-10 w-16 h-16 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-lg">
                         <Play className="ml-1 text-gray-800" fill="currentColor" />
                     </div>
-                    <div className="absolute bottom-4 text-white font-bold text-sm drop-shadow-md">Watch on TikTok</div>
+                    <div className="absolute bottom-4 text-white font-black text-sm drop-shadow-md uppercase tracking-widest">Ver no TikTok</div>
                 </div>
                 <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center text-center md:text-left">
-                    <h2 className="text-3xl md:text-4xl font-black text-pink-600 mb-6">The Viral TikTok Date Invitation Trend</h2>
-                    <p className="text-gray-600 mb-8 font-medium">
-                        Join the trend! Watch how thousands of couples create their perfect date in seconds.<br /><br />
-                        Ready to make your next date night extra special?
+                    <h2 className="text-3xl md:text-4xl font-black text-pink-600 mb-6 uppercase tracking-tight leading-tight">
+                        O segredo que vai correr o TikTok todo
+                    </h2>
+                    <p className="text-gray-600 mb-8 font-medium leading-relaxed">
+                        Milhares de casais estão a usar o DateWithMe para criar encontros que parecem saídos de um filme. Não é sorte — é ter a ferramenta certa.<br /><br />
+                        Pronto para seres o protagonista da próxima história de amor viral?
                     </p>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-pink-500 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-pink-600 transition-colors uppercase text-sm w-max"
+                        className="bg-pink-500 text-white px-8 py-4 rounded-full font-black shadow-lg hover:bg-pink-600 transition-colors uppercase text-xs tracking-widest w-max mx-auto md:mx-0"
                     >
-                        Create Yours Now
+                        CRIA O TEU CONVITE AGORA
                     </button>
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="text-center pb-10 text-gray-400 text-sm font-medium">
-                © 2026 DateWithMe. All rights reserved.
-                <div className="flex justify-center gap-4 mt-4">
-                    <span>Instagram</span>
-                    <span>TikTok</span>
+            <footer className="text-center pb-10 text-gray-400 text-xs font-black uppercase tracking-widest">
+                © 2026 DateWithMe. Todos os direitos reservados.
+                <div className="flex justify-center gap-6 mt-4">
+                    <span className="cursor-pointer hover:text-pink-400 transition-colors">Instagram</span>
+                    <span className="cursor-pointer hover:text-pink-400 transition-colors">TikTok</span>
                 </div>
             </footer>
 
@@ -351,24 +336,24 @@ export default function Home() {
                                 {/* Header */}
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <h2 className="text-3xl font-black text-gray-800">
-                                            {modalStep === 1 && "What's the plan? ✨"}
-                                            {modalStep === 2 && "Choose your Vibe 💖"}
-                                            {modalStep === 3 && "FlirtDeck™ Editor 🎴"}
+                                        <h2 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
+                                            {modalStep === 1 && "Qual é o plano? ✨"}
+                                            {modalStep === 2 && "Escolhe a tua Vibe 💖"}
+                                            {modalStep === 3 && "Editor FlirtDeck™ 🎴"}
                                         </h2>
-                                        <p className="text-gray-500 font-medium text-sm mt-1">
-                                            {modalStep === 1 && 'Start by inviting someone special.'}
-                                            {modalStep === 2 && 'Select a template to customize.'}
-                                            {modalStep === 3 && 'Customize every slide, then share your deck link.'}
+                                        <p className="text-gray-400 font-bold text-[10px] mt-1 uppercase tracking-widest">
+                                            {modalStep === 1 && 'Começa por convidar alguém especial.'}
+                                            {modalStep === 2 && 'Seleciona um template para personalizar.'}
+                                            {modalStep === 3 && 'Personaliza cada slide e partilha o teu deck.'}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {modalStep === 3 && (
                                             <button
                                                 onClick={() => setModalStep(1)}
-                                                className="text-sm font-bold text-gray-400 hover:text-pink-500 px-3 py-1 rounded-full hover:bg-pink-50 transition-all"
+                                                className="text-[10px] font-black text-gray-400 hover:text-pink-500 px-4 py-2 rounded-full hover:bg-pink-50 transition-all uppercase tracking-widest"
                                             >
-                                                ← Back
+                                                ← Voltar
                                             </button>
                                         )}
                                         <button onClick={closeModal} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -393,15 +378,15 @@ export default function Home() {
                                                     <Heart className="fill-white" size={30} color="white" />
                                                 </div>
                                                 <div className="text-center px-4">
-                                                    <p className="font-black text-gray-800 text-lg leading-tight">Invite for a Date</p>
-                                                    <p className="text-xs text-gray-500 mt-1">Interactive step-by-step invitation</p>
+                                                    <p className="font-black text-gray-800 text-lg leading-tight uppercase tracking-tight">Convidar para um Date</p>
+                                                    <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-widest">Convite interativo passo-a-passo</p>
                                                 </div>
                                             </motion.button>
 
                                             {/* Divider */}
-                                            <div className="flex flex-col items-center gap-2 text-gray-300 font-bold text-sm">
+                                            <div className="flex flex-col items-center gap-2 text-gray-300 font-black text-xs uppercase tracking-widest">
                                                 <div className="w-px h-10 bg-gray-200 hidden md:block" />
-                                                <span>or</span>
+                                                <span>ou</span>
                                                 <div className="w-px h-10 bg-gray-200 hidden md:block" />
                                             </div>
 
@@ -416,14 +401,14 @@ export default function Home() {
                                                     🎴
                                                 </div>
                                                 <div className="text-center px-4">
-                                                    <p className="font-black text-white text-lg leading-tight">FlirtDeck™</p>
-                                                    <p className="text-xs text-gray-400 mt-1">Personal presentation to impress your crush</p>
+                                                    <p className="font-black text-white text-lg leading-tight uppercase tracking-tight">FlirtDeck™</p>
+                                                    <p className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">Apresentação pessoal para a impressionar</p>
                                                 </div>
                                             </motion.button>
                                         </div>
 
-                                        <p className="mt-8 text-center text-gray-400 text-sm font-medium">
-                                            Choose how you want to make your move 💕
+                                        <p className="mt-8 text-center text-gray-400 text-[9px] font-black uppercase tracking-[0.2em]">
+                                            Escolhe como queres dar o próximo passo 💕
                                         </p>
                                     </div>
                                 )}
@@ -444,12 +429,12 @@ export default function Home() {
                                                 <div className="bg-white p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform shadow-sm text-2xl">
                                                     {template.label?.includes('First') ? '🌸' : template.label?.includes('Special') ? '✨' : '🎲'}
                                                 </div>
-                                                <h3 className="font-extrabold text-gray-900 text-lg mb-1">{template.label}</h3>
-                                                <p className="text-xs text-gray-500 mb-4 leading-relaxed line-clamp-2">
-                                                    {template.description || 'Perfect for creating a special moment.'}
+                                                <h3 className="font-black text-gray-900 text-lg mb-1 uppercase tracking-tight">{template.label}</h3>
+                                                <p className="text-[10px] text-gray-500 mb-4 leading-relaxed font-bold uppercase tracking-widest">
+                                                    {template.description || 'Perfeito para criar um momento especial.'}
                                                 </p>
                                                 <div className="mt-auto w-full border-t border-gray-200 pt-3 flex justify-between items-center group-hover:border-pink-200">
-                                                    <span className="text-xs font-bold text-gray-400 group-hover:text-pink-600 uppercase tracking-wide transition-colors">Select</span>
+                                                    <span className="text-[10px] font-black text-gray-400 group-hover:text-pink-600 uppercase tracking-widest transition-colors">Selecionar</span>
                                                     <ChevronRight size={14} className="text-gray-300 group-hover:text-pink-600 transition-colors" />
                                                 </div>
                                             </button>
@@ -468,44 +453,45 @@ export default function Home() {
                                         <div className="w-full md:w-[42%] flex-shrink-0 overflow-y-auto pr-4 pb-4 flex flex-col">
 
                                             {/* Intro */}
-                                            <ESection title="Intro">
+                                            <ESection title="Introdução">
                                                 <div style={{ marginBottom: 8 }}>
-                                                    <label style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: 4 }}>NAME</label>
+                                                    <label style={{ fontSize: 9, color: '#9ca3af', fontWeight: 900, display: 'block', marginBottom: 4, letterSpacing: '0.1em' }}>NOME</label>
                                                     <EInput
                                                         value={deckData.intro.name}
                                                         onChange={e => updIntro('name', e.target.value)}
-                                                        placeholder="Your name"
+                                                        placeholder="O teu nome"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, display: 'block', marginBottom: 4 }}>TAGLINE</label>
+                                                    <label style={{ fontSize: 9, color: '#9ca3af', fontWeight: 900, display: 'block', marginBottom: 4, letterSpacing: '0.1em' }}>TAGLINE</label>
                                                     <EInput
                                                         value={deckData.intro.tagline}
                                                         onChange={e => updIntro('tagline', e.target.value)}
-                                                        placeholder="Not your average date. 😏"
+                                                        placeholder="Não é um date qualquer. 😏"
                                                     />
                                                 </div>
                                             </ESection>
 
                                             {/* Why Me */}
-                                            <ESection title="Why Me">
+                                            <ESection title="Porquê eu?">
                                                 {deckData.whyMe.map((w, idx) => (
                                                     <div key={idx} style={{
-                                                        background: '#fff5f7', borderRadius: 10,
-                                                        padding: '10px 10px 8px', marginBottom: 8,
+                                                        background: '#fff', borderRadius: 16,
+                                                        padding: '12px', marginBottom: 8,
                                                         border: '1px solid #fecdd3',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                                                     }}>
                                                         <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
                                                             <EInput
                                                                 value={w.emoji}
                                                                 onChange={e => updWhyMe(idx, 'emoji', e.target.value)}
-                                                                style={{ width: 48, textAlign: 'center', padding: '7px 6px' }}
+                                                                style={{ width: 44, textAlign: 'center', padding: '7px 4px' }}
                                                                 placeholder="🎯"
                                                             />
                                                             <EInput
                                                                 value={w.title}
                                                                 onChange={e => updWhyMe(idx, 'title', e.target.value)}
-                                                                placeholder="Title"
+                                                                placeholder="Título"
                                                                 style={{ flex: 1 }}
                                                             />
                                                         </div>
@@ -513,7 +499,7 @@ export default function Home() {
                                                             <EInput
                                                                 value={w.desc}
                                                                 onChange={e => updWhyMe(idx, 'desc', e.target.value)}
-                                                                placeholder="Short description..."
+                                                                placeholder="Breve descrição..."
                                                                 style={{ flex: 1 }}
                                                             />
                                                             {deckData.whyMe.length > 1 && (
@@ -526,20 +512,20 @@ export default function Home() {
                                                 ))}
                                                 <button
                                                     onClick={addWhyMe}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(244,63,94,0.06)', border: '1px dashed #fca5a5', borderRadius: 8, padding: '7px 12px', color: '#f43f5e', fontSize: 12, fontWeight: 700, cursor: 'pointer', width: '100%', marginTop: 4 }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px dashed #fca5a5', borderRadius: 12, padding: '10px 12px', color: '#f43f5e', fontSize: 10, fontWeight: 900, cursor: 'pointer', width: '100%', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}
                                                 >
-                                                    <Plus size={13} /> Add reason
+                                                    <Plus size={13} /> Adicionar motivo
                                                 </button>
                                             </ESection>
 
                                             {/* Fun Facts */}
-                                            <ESection title="Fun Facts">
+                                            <ESection title="Factos Curiosos">
                                                 {deckData.funFacts.map((f, idx) => (
                                                     <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
                                                         <EInput
                                                             value={f}
                                                             onChange={e => updFact(idx, e.target.value)}
-                                                            placeholder="Fun fact..."
+                                                            placeholder="Facto curioso..."
                                                             style={{ flex: 1 }}
                                                         />
                                                         {deckData.funFacts.length > 1 && (
@@ -551,9 +537,9 @@ export default function Home() {
                                                 ))}
                                                 <button
                                                     onClick={addFact}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(244,63,94,0.06)', border: '1px dashed #fca5a5', borderRadius: 8, padding: '7px 12px', color: '#f43f5e', fontSize: 12, fontWeight: 700, cursor: 'pointer', width: '100%', marginTop: 4 }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px dashed #fca5a5', borderRadius: 12, padding: '10px 12px', color: '#f43f5e', fontSize: 10, fontWeight: 900, cursor: 'pointer', width: '100%', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}
                                                 >
-                                                    <Plus size={13} /> Add fact
+                                                    <Plus size={13} /> Adicionar facto
                                                 </button>
                                             </ESection>
 
@@ -585,9 +571,9 @@ export default function Home() {
                                                 ))}
                                                 <button
                                                     onClick={addFlag}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(244,63,94,0.06)', border: '1px dashed #fca5a5', borderRadius: 8, padding: '7px 12px', color: '#f43f5e', fontSize: 12, fontWeight: 700, cursor: 'pointer', width: '100%', marginTop: 4 }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px dashed #fca5a5', borderRadius: 12, padding: '10px 12px', color: '#f43f5e', fontSize: 10, fontWeight: 900, cursor: 'pointer', width: '100%', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}
                                                 >
-                                                    <Plus size={13} /> Add red flag
+                                                    <Plus size={13} /> Adicionar red flag
                                                 </button>
                                             </ESection>
 
@@ -597,20 +583,21 @@ export default function Home() {
                                                     onClick={handleGenerateLink}
                                                     disabled={isSaving}
                                                     style={{
-                                                        width: '100%', padding: '13px',
-                                                        borderRadius: 12,
+                                                        width: '100%', padding: '14px',
+                                                        borderRadius: 16,
                                                         background: 'linear-gradient(135deg, #f43f5e, #e11d48)',
                                                         border: 'none', color: '#fff',
-                                                        fontSize: 14, fontWeight: 800,
+                                                        fontSize: 13, fontBlack: 900,
                                                         cursor: 'pointer',
-                                                        boxShadow: '0 6px 20px rgba(244,63,94,0.35)',
+                                                        boxShadow: '0 8px 24px rgba(244,63,94,0.3)',
                                                         display: 'flex', alignItems: 'center',
-                                                        justifyContent: 'center', gap: 8,
-                                                        letterSpacing: '0.03em',
+                                                        justifyContent: 'center', gap: 10,
+                                                        letterSpacing: '0.08em',
                                                         opacity: isSaving ? 0.7 : 1,
+                                                        textTransform: 'uppercase'
                                                     }}
                                                 >
-                                                    {isSaving ? "Creating..." : <>🔗 Generate & Open Link</>}
+                                                    {isSaving ? "A CRIAR..." : <>🔗 GERAR & ABRIR LINK</>}
                                                 </button>
 
                                                 <button
@@ -702,9 +689,9 @@ export default function Home() {
                                                             </div>
                                                             <button
                                                                 onClick={() => setIsMobilePreviewOpen(false)}
-                                                                className="text-gray-400 font-bold text-sm hover:text-white"
+                                                                className="text-gray-400 font-black text-[10px] uppercase tracking-widest hover:text-white"
                                                             >
-                                                                Close
+                                                                Fechar
                                                             </button>
                                                         </div>
                                                         <div className="flex-1 overflow-hidden">

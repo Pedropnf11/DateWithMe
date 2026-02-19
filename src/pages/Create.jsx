@@ -1,10 +1,12 @@
 
 import { useEffect, useState, useRef } from 'react';
 import useQuizStore from '../store/useQuizStore';
+import { resolveTimeContext, resolveActiveSteps } from '../components/Invite/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronRight, ArrowLeft, X, Plus, Trash2, Copy,
-    Link2, Upload, ChevronLeft, ChevronRight as ChevronRightIcon
+    Link2, Upload, ChevronLeft, ChevronRight as ChevronRightIcon,
+    Check, ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -49,181 +51,268 @@ function CalendarStep({ step, updateQuestion }) {
     const end = new Date(today);
     end.setDate(today.getDate() + 30);
 
-    const selectedDates = step.config?.selectedDates || [];
-    const selectedTimes = step.config?.selectedTimes || {};
-    const offerFullCalendar = step.config?.offerFullCalendar || false;
-    const calendarMessage = step.config?.calendarMessage || 'Para ti arranjo sempre tempo 💕';
+    const [editingDate, setEditingDate] = useState(null);
+    const [hh, setHh] = useState('19');
+    const [mm, setMm] = useState('00');
+    const [hhe, setHhe] = useState('22');
+    const [mme, setMme] = useState('00');
+
+    const config = step.config || {};
+    const mode = config.mode || 'liberty'; // 'liberty' (Mode 1) | 'suggestions' (Mode 2)
+    const suggestedDates = config.suggestedDates || []; // [{ date, start, end }]
+    const calendarMessage = config.calendarMessage || 'Para ti arranjo sempre tempo 💕';
+
+    const setMode = (newMode) => {
+        updateQuestion(step.id, { config: { ...config, mode: newMode } });
+    };
 
     const toggleDate = (dateStr) => {
-        const current = step.config?.selectedDates || [];
-        const currentTimes = step.config?.selectedTimes || {};
-        let newDates, newTimes;
-        if (current.includes(dateStr)) {
-            newDates = current.filter(d => d !== dateStr);
-            newTimes = { ...currentTimes };
-            delete newTimes[dateStr];
+        if (mode === 'liberty') return;
+        const exists = suggestedDates.find(d => d.date === dateStr);
+        if (exists) {
+            setEditingDate(dateStr);
+            setHh(exists.start?.split(':')[0] || '19');
+            setMm(exists.start?.split(':')[1] || '00');
+            setHhe(exists.end?.split(':')[0] || '22');
+            setMme(exists.end?.split(':')[1] || '00');
         } else {
-            newDates = [...current, dateStr];
-            newTimes = { ...currentTimes, [dateStr]: { from: '18:00', to: '23:00' } };
+            const newDates = [...suggestedDates, { date: dateStr, start: '19:00', end: '22:00' }];
+            updateQuestion(step.id, { config: { ...config, suggestedDates: newDates } });
+            setEditingDate(dateStr);
+            setHh('19'); setMm('00'); setHhe('22'); setMme('00');
         }
-        updateQuestion(step.id, { config: { ...step.config, selectedDates: newDates, selectedTimes: newTimes } });
     };
 
-    const updateTimeForDate = (dateStr, field, value) => {
-        const currentTimes = step.config?.selectedTimes || {};
-        const newTimes = {
-            ...currentTimes,
-            [dateStr]: { ...currentTimes[dateStr], [field]: value }
-        };
-        updateQuestion(step.id, { config: { ...step.config, selectedTimes: newTimes } });
+    const removeDate = (dateStr) => {
+        const newDates = suggestedDates.filter(d => d.date !== dateStr);
+        updateQuestion(step.id, { config: { ...config, suggestedDates: newDates } });
+        if (editingDate === dateStr) setEditingDate(null);
     };
 
-    const updateFullCalendarTime = (field, value) => {
-        updateQuestion(step.id, {
-            config: { ...step.config, fullCalendarTime: { ...fullCalendarTime, [field]: value } }
+    const updateTime = () => {
+        if (!editingDate) return;
+        const newDates = suggestedDates.map(d => {
+            if (d.date === editingDate) {
+                return { ...d, start: `${hh}:${mm}`, end: `${hhe}:${mme}` };
+            }
+            return d;
         });
+        updateQuestion(step.id, { config: { ...config, suggestedDates: newDates } });
     };
 
-    const updateCalendarMessage = (val) => {
-        updateQuestion(step.id, {
-            config: { ...step.config, calendarMessage: val }
-        });
-    };
+    const [showFreePopup, setShowFreePopup] = useState(false);
 
     const toggleFullCalendar = () => {
+        const newMode = mode === 'liberty' ? 'suggestions' : 'liberty';
+        const defaultMsg = 'Para ti tenho todo o tempo do mundo...';
+        const defaultGif = 'https://media.tenor.com/CAtqFqK_2i0AAAAd/dance-girl.gif';
+
         updateQuestion(step.id, {
-            config: { ...step.config, offerFullCalendar: !offerFullCalendar }
+            config: {
+                ...config,
+                mode: newMode,
+                libertyMessage: config.libertyMessage || defaultMsg,
+                libertyGif: config.libertyGif || defaultGif
+            }
         });
+
+        if (newMode === 'liberty') {
+            setShowFreePopup(true);
+            setTimeout(() => setShowFreePopup(false), 1500);
+        }
     };
 
-    // Generate time options (every 30 min)
-    const timeOptions = [];
-    for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 30) {
-            timeOptions.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-        }
-    }
-
-    // Get month range label
-    const startMonth = MONTH_NAMES[today.getMonth()];
-    const endMonth = MONTH_NAMES[end.getMonth()];
-    const year = end.getFullYear();
-    const rangeLabel = startMonth === endMonth
-        ? `${startMonth}. ${year}`
-        : `${startMonth}. → ${endMonth}. ${year}`;
+    const rangeLabel = (() => {
+        const s = MONTH_NAMES[today.getMonth()];
+        const e = MONTH_NAMES[end.getMonth()];
+        return s === e
+            ? `${s}. ${end.getFullYear()}`
+            : `${s}. → ${e}. ${end.getFullYear()}`;
+    })();
 
     return (
-        <div className="space-y-5">
-            <h2 className="text-2xl font-black text-pink-500 uppercase tracking-wide text-center">
-                {step.stepLabel}
-            </h2>
+        <div className="space-y-6">
+            <div className="text-center space-y-4">
+                <h2 className="text-2xl font-black text-pink-500 uppercase tracking-widest">{step.stepLabel || 'STEP 3. WHEN ARE YOU FREE?'}</h2>
 
-            {/* Toggle */}
-            <div className="flex items-center justify-center gap-3">
-                <button
-                    onClick={toggleFullCalendar}
-                    className={`w-12 h-6 rounded-full relative transition-colors ${offerFullCalendar ? 'bg-pink-500' : 'bg-gray-300'}`}
-                >
-                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${offerFullCalendar ? 'translate-x-6' : ''}`} />
-                </button>
-                <span className="text-xs font-black uppercase tracking-widest text-gray-600">Offer Full Calendar</span>
+                {/* Offer Full Calendar Toggle */}
+                <div className="flex items-center justify-center gap-4">
+                    <label className="relative inline-flex items-center cursor-pointer scale-90">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={mode === 'liberty'}
+                            onChange={toggleFullCalendar}
+                        />
+                        <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-pink-500"></div>
+                    </label>
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                        OFFER FULL CALENDAR
+                    </span>
+                </div>
+
+                <div className="space-y-1">
+                    <p className="text-[11px] font-black text-gray-800 uppercase tracking-tighter">Select available dates:</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Next 30 days: {rangeLabel}</p>
+                </div>
             </div>
 
-            {!offerFullCalendar && (
-                <>
-                    <p className="text-center text-sm text-gray-500 font-medium">Select available dates & times:</p>
-                    <p className="text-center text-xs text-gray-400">Next 30 days: {rangeLabel}</p>
-
-                    {/* Calendar Grid */}
-                    <div className="w-full">
-                        {/* Weekday headers */}
-                        <div className="grid grid-cols-7 mb-2">
-                            {WEEKDAYS.map(d => (
-                                <div key={d} className="text-center text-xs font-bold text-gray-500 py-1">{d}</div>
-                            ))}
-                        </div>
-
-                        {/* Day cells */}
-                        <div className="grid grid-cols-7 gap-1">
-                            {calendarDays.map(({ date, inRange, isToday }) => {
-                                const dateStr = date.toISOString().split('T')[0];
-                                const isSelected = selectedDates.includes(dateStr);
-                                const dayNum = date.getDate();
-
-                                if (!inRange) {
-                                    return (
-                                        <div key={dateStr} className="aspect-square flex items-center justify-center">
-                                            <span className="text-sm text-gray-200">{dayNum}</span>
-                                        </div>
-                                    );
-                                }
-
-                                return (
-                                    <button
-                                        key={dateStr}
-                                        onClick={() => toggleDate(dateStr)}
-                                        className={`aspect-square flex items-center justify-center rounded-full text-sm font-bold transition-all
-                                            ${isSelected
-                                                ? 'bg-pink-500 text-white shadow-md shadow-pink-300'
-                                                : isToday
-                                                    ? 'border-2 border-pink-300 text-pink-500 hover:bg-pink-50'
-                                                    : 'text-gray-700 hover:bg-pink-50 hover:text-pink-500'
-                                            }`}
-                                    >
-                                        {dayNum}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Time pickers for selected dates */}
-                    {selectedDates.length > 0 && (
-                        <div className="space-y-3 border-t border-gray-100 pt-4">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Available hours per day</p>
-                            {selectedDates.sort().map(dateStr => {
-                                const dateObj = new Date(dateStr + 'T00:00:00');
-                                const dayLabel = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-                                const times = selectedTimes[dateStr] || { from: '18:00', to: '23:00' };
-                                return (
-                                    <div key={dateStr} className="flex items-center gap-2 bg-pink-50 rounded-xl p-3">
-                                        <span className="text-xs font-bold text-pink-600 w-20 shrink-0">{dayLabel}</span>
-                                        <select
-                                            value={times.from}
-                                            onChange={(e) => updateTimeForDate(dateStr, 'from', e.target.value)}
-                                            className="flex-1 text-xs font-bold p-2 rounded-lg border border-pink-200 bg-white text-gray-700 outline-none focus:border-pink-500"
-                                        >
-                                            {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                        <span className="text-xs text-gray-400 font-bold">→</span>
-                                        <select
-                                            value={times.to}
-                                            onChange={(e) => updateTimeForDate(dateStr, 'to', e.target.value)}
-                                            className="flex-1 text-xs font-bold p-2 rounded-lg border border-pink-200 bg-white text-gray-700 outline-none focus:border-pink-500"
-                                        >
-                                            {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </>
+            {showFreePopup && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: -20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="bg-white p-3 rounded-2xl shadow-2xl border-2 border-pink-100 text-center space-y-1 max-w-[180px] mx-auto absolute inset-0 m-auto h-fit z-50 overflow-hidden"
+                >
+                    <p className="text-xl">🕊️</p>
+                    <p className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Liberdade Ativada!</p>
+                </motion.div>
             )}
 
-            {offerFullCalendar && (
-                <div className="bg-pink-50 rounded-2xl p-6 text-center border border-pink-100 space-y-4">
-                    <input
-                        value={calendarMessage}
-                        onChange={(e) => updateCalendarMessage(e.target.value)}
-                        className="w-full text-center bg-transparent text-pink-600 font-black text-lg outline-none border-b border-pink-200 focus:border-pink-500 pb-1"
-                        placeholder="Type your message..."
-                    />
-                    <img
-                        src="https://media1.tenor.com/m/afjI9QKGDTUAAAAC/blinking-wink.gif"
-                        alt="Wink"
-                        className="mx-auto h-40 rounded-2xl shadow-lg object-cover"
-                    />
+            {mode === 'liberty' ? (
+                <div className="space-y-4">
+
+
+                    {/* Liberty Popup Settings */}
+                    <div className="bg-gray-50/80 p-6 rounded-[2rem] border border-gray-100 space-y-4 text-left shadow-inner">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse" />
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Popup para ela (Modo Free)</p>
+                        </div>
+
+                        <div className="space-y-1">
+                            <span className="text-[9px] font-black text-gray-300 uppercase ml-2 tracking-widest">Mensagem</span>
+                            <input
+                                value={config.libertyMessage || 'Para ti tenho todo o tempo do mundo...'}
+                                onChange={(e) => updateQuestion(step.id, { config: { ...config, libertyMessage: e.target.value } })}
+                                placeholder="Mensagem do popup..."
+                                className="w-full bg-white px-4 py-3 rounded-xl border border-gray-100 text-xs font-medium text-gray-700 outline-none focus:border-pink-300 transition-all shadow-sm"
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <span className="text-[9px] font-black text-gray-300 uppercase ml-2 tracking-widest">GIF URL</span>
+                            <div className="flex items-center gap-3">
+                                {config.libertyGif && (
+                                    <img src={config.libertyGif} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" alt="Preview" />
+                                )}
+                                <input
+                                    value={config.libertyGif || ''}
+                                    onChange={(e) => updateQuestion(step.id, { config: { ...config, libertyGif: e.target.value } })}
+                                    placeholder="Link do GIF..."
+                                    className="flex-1 bg-white px-4 py-3 rounded-xl border border-gray-100 text-[10px] text-gray-400 font-mono outline-none focus:border-pink-300 transition-all shadow-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {/* Calendar Grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                        {WEEKDAYS.map(w => (
+                            <div key={w} className="text-[10px] font-black text-gray-400 text-center py-1">{w}</div>
+                        ))}
+                        {calendarDays.map((d, i) => {
+                            const dateStr = d.date.toISOString().split('T')[0];
+                            const isSelected = suggestedDates.some(sd => sd.date === dateStr);
+                            const isEditing = editingDate === dateStr;
+
+                            return (
+                                <button
+                                    key={i}
+                                    disabled={!d.inRange}
+                                    onClick={() => toggleDate(dateStr)}
+                                    className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-black transition-all relative
+                                        ${!d.inRange ? 'opacity-10 cursor-not-allowed' : 'hover:scale-105'}
+                                        ${isSelected ? 'bg-pink-500 text-white shadow-md' : 'bg-gray-50 text-gray-400'}
+                                        ${isEditing ? 'ring-2 ring-pink-500 ring-offset-2' : ''}
+                                    `}
+                                >
+                                    {d.date.getDate()}
+                                    {isSelected && <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-sm"><Check size={8} className="text-pink-500" strokeWidth={4} /></div>}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Editing Section */}
+                    {editingDate && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-pink-50 rounded-3xl border border-pink-100 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <p className="text-[10px] font-black text-pink-600 uppercase tracking-widest">Configurar: {editingDate}</p>
+                                <button onClick={() => removeDate(editingDate)} className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">Remover dia</button>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest text-center mb-1">Começa às</span>
+                                    <div className="flex items-center bg-white rounded-2xl px-4 py-2.5 shadow-sm border border-pink-100/50 group-hover:border-pink-200 transition-all">
+                                        <div className="relative">
+                                            <select
+                                                value={hh}
+                                                onChange={e => { setHh(e.target.value); setTimeout(updateTime, 0); }}
+                                                className="appearance-none bg-transparent text-xl font-black text-gray-800 outline-none cursor-pointer pr-4"
+                                            >
+                                                {Array.from({ length: 24 }).map((_, i) => <option key={i} value={String(i).padStart(2, '0')}>{String(i).padStart(2, '0')}</option>)}
+                                            </select>
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-pink-300">
+                                                <ChevronDown size={10} strokeWidth={4} />
+                                            </div>
+                                        </div>
+                                        <span className="mx-3 text-pink-200 font-black text-xl">:</span>
+                                        <div className="relative">
+                                            <select
+                                                value={mm}
+                                                onChange={e => { setMm(e.target.value); setTimeout(updateTime, 0); }}
+                                                className="appearance-none bg-transparent text-xl font-black text-gray-800 outline-none cursor-pointer pr-4"
+                                            >
+                                                {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
+                                            </select>
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-pink-300">
+                                                <ChevronDown size={10} strokeWidth={4} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <motion.div animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="text-pink-200 mt-6 lg:mt-8">
+                                    <ChevronRightIcon size={20} strokeWidth={4} />
+                                </motion.div>
+
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest text-center mb-1">Até às</span>
+                                    <div className="flex items-center bg-white rounded-2xl px-4 py-2.5 shadow-sm border border-pink-100/50 group-hover:border-pink-200 transition-all">
+                                        <div className="relative">
+                                            <select
+                                                value={hhe}
+                                                onChange={e => { setHhe(e.target.value); setTimeout(updateTime, 0); }}
+                                                className="appearance-none bg-transparent text-xl font-black text-gray-800 outline-none cursor-pointer pr-4"
+                                            >
+                                                {Array.from({ length: 24 }).map((_, j) => <option key={j} value={String(j).padStart(2, '0')}>{String(j).padStart(2, '0')}</option>)}
+                                            </select>
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-pink-300">
+                                                <ChevronDown size={10} strokeWidth={4} />
+                                            </div>
+                                        </div>
+                                        <span className="mx-3 text-pink-200 font-black text-xl">:</span>
+                                        <div className="relative">
+                                            <select
+                                                value={mme}
+                                                onChange={e => { setMme(e.target.value); setTimeout(updateTime, 0); }}
+                                                className="appearance-none bg-transparent text-xl font-black text-gray-800 outline-none cursor-pointer pr-4"
+                                            >
+                                                {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
+                                            </select>
+                                            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-pink-300">
+                                                <ChevronDown size={10} strokeWidth={4} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-[9px] text-pink-400 font-bold italic text-center leading-tight">Os horários ajudam a decidir se haverá jantar, almoço, etc.</p>
+                        </motion.div>
+                    )}
                 </div>
             )}
         </div>
@@ -368,119 +457,159 @@ function RankingStep({ step, updateQuestion }) {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const isSurprise = step.config?.isSurprise || false;
+
+    const toggleSurprise = () => {
+        updateQuestion(step.id, {
+            config: { ...step.config, isSurprise: !isSurprise }
+        });
+    };
+
     return (
-        <div className="space-y-5">
-            {/* Title */}
-            <input
-                value={step.title}
-                onChange={(e) => updateQuestion(step.id, { title: e.target.value })}
-                className="w-full text-center text-2xl font-black text-gray-800 bg-transparent outline-none placeholder-gray-300 pb-2 border-b-2 border-gray-100 focus:border-pink-400"
-            />
-
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
-                You pick the options → they drag to rank
-            </p>
-
-            {/* Image Card Grid */}
-            <div className="grid grid-cols-3 gap-3">
-                {options.map((opt, idx) => {
-                    const label = typeof opt === 'object' ? opt.label : opt;
-                    const image = typeof opt === 'object' ? opt.image : '';
-                    const excluded = typeof opt === 'object' ? !!opt.excluded : false;
-
-                    return (
-                        <div
-                            key={idx}
-                            onClick={() => toggleOption(idx)}
-                            className="relative cursor-pointer rounded-2xl overflow-hidden transition-all group"
-                            style={{ border: excluded ? '2px solid #e5e7eb' : '3px solid #f472b6', opacity: excluded ? 0.45 : 1, filter: excluded ? 'grayscale(1)' : 'none' }}
-                        >
-                            {/* Image */}
-                            <div className="aspect-square bg-gray-100">
-                                {image
-                                    ? <img src={image} className="w-full h-full object-cover" alt={label} />
-                                    : <div className="w-full h-full flex items-center justify-center text-3xl bg-pink-50">{label.match(/\p{Emoji}/u)?.[0] || '🍽️'}</div>
-                                }
-                            </div>
-
-                            {/* Label */}
-                            <div className="bg-white px-1 py-1.5 text-center">
-                                <span className="text-xs font-bold text-gray-700 truncate block">{label}</span>
-                            </div>
-
-                            {/* Checkmark overlay */}
-                            {!excluded && (
-                                <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center shadow">
-                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                                        <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                            )}
-
-                            {/* Remove button */}
-                            <button
-                                onClick={(e) => { e.stopPropagation(); removeOption(idx); }}
-                                className="absolute top-1.5 left-1.5 w-5 h-5 bg-red-500 rounded-full items-center justify-center shadow hidden group-hover:flex"
-                            >
-                                <X size={10} className="text-white" />
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Add your own section */}
-            <div className="border-t border-gray-100 pt-4 space-y-3">
-                <p className="text-xs font-bold text-gray-500 text-center">Or add your own:</p>
-                <p className="text-[10px] text-gray-400 text-center leading-relaxed">
-                    Tip: Add a name and optionally upload an image, then click <strong>"Add Option"</strong> to confirm.
-                </p>
-
+        <div className="space-y-8 w-full">
+            <div className="text-center space-y-4">
                 <input
-                    value={customName}
-                    onChange={(e) => setCustomName(e.target.value)}
-                    placeholder="e.g. Tacos 🌮"
-                    className="w-full text-sm p-3 rounded-xl border-2 border-gray-100 focus:border-pink-400 outline-none text-gray-700 font-medium"
-                    onKeyDown={(e) => e.key === 'Enter' && addCustomOption()}
+                    value={step.title}
+                    onChange={(e) => updateQuestion(step.id, { title: e.target.value })}
+                    className="w-full text-center text-3xl font-black text-gray-800 bg-transparent outline-none placeholder-gray-300 pb-2 border-b-2 border-gray-100 focus:border-pink-400"
                 />
 
-                <div className="space-y-2">
-                    <p className="text-[10px] text-gray-400 text-center">1. Upload image file (optional)<br />2. Click "Add Option" to confirm</p>
-
-                    {customImagePreview && (
-                        <div className="relative w-20 h-20 mx-auto rounded-xl overflow-hidden border-2 border-pink-300">
-                            <img src={customImagePreview} className="w-full h-full object-cover" alt="preview" />
-                            <button
-                                onClick={() => { setCustomImagePreview(null); setCustomImageData(null); }}
-                                className="absolute top-0.5 right-0.5 bg-red-500 rounded-full w-4 h-4 flex items-center justify-center"
-                            >
-                                <X size={8} className="text-white" />
-                            </button>
-                        </div>
-                    )}
-
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-2.5 bg-pink-50 border-2 border-pink-200 text-pink-600 font-bold text-sm rounded-xl hover:bg-pink-100 transition-all flex items-center justify-center gap-2"
-                    >
-                        <Upload size={16} /> Step 1: Upload Image File
-                    </button>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-
-                    <p className="text-[9px] text-gray-400 text-center">
-                        Note: iPhone photos are often HEIC/HEIF. Please convert/export as JPG or PNG.
+                <div className="flex flex-col items-center gap-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                        TU ESCOLHES AS OPÇÕES → ELAS ORDENAM
                     </p>
                 </div>
-
-                <button
-                    onClick={addCustomOption}
-                    disabled={!customName.trim()}
-                    className="w-full py-3 bg-pink-500 text-white font-black rounded-xl hover:bg-pink-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                    <Plus size={18} /> Step 2: Add Custom Option
-                </button>
-                <p className="text-[10px] text-gray-400 text-center">This confirms your name + image and adds it to the grid above.</p>
             </div>
+
+            <div className="bg-white rounded-[3rem] p-8 shadow-2xl shadow-pink-100/50 border border-pink-50 space-y-8 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-400 to-rose-400" />
+
+                {/* Image Card Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {options.map((opt, idx) => {
+                        const label = typeof opt === 'object' ? opt.label : opt;
+                        const image = typeof opt === 'object' ? opt.image : '';
+                        const excluded = typeof opt === 'object' ? !!opt.excluded : false;
+
+                        return (
+                            <motion.div
+                                key={idx}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => toggleOption(idx)}
+                                className={`relative cursor-pointer rounded-3xl overflow-hidden transition-all group border-4
+                                    ${excluded ? 'border-gray-100 opacity-40 grayscale' : 'border-pink-200 shadow-lg shadow-pink-100/50'}
+                                `}
+                            >
+                                {/* Image */}
+                                <div className="aspect-square bg-gray-50">
+                                    {image
+                                        ? <img src={image} className="w-full h-full object-cover" alt={label} />
+                                        : <div className="w-full h-full flex items-center justify-center text-4xl bg-pink-50/50">{label.match(/\p{Emoji}/u)?.[0] || '🍽️'}</div>
+                                    }
+                                </div>
+
+                                {/* Label */}
+                                <div className="bg-white/90 backdrop-blur-sm absolute bottom-0 left-0 w-full py-2 px-1 text-center">
+                                    <span className="text-[10px] font-bold text-gray-800 truncate block uppercase tracking-tighter">{label}</span>
+                                </div>
+
+                                {/* Checkmark overlay */}
+                                {!excluded && (
+                                    <div className="absolute top-2 right-2 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                        <Check size={12} className="text-white" strokeWidth={4} />
+                                    </div>
+                                )}
+
+                                {/* Remove button */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); removeOption(idx); }}
+                                    className="absolute top-2 left-2 w-6 h-6 bg-rose-500 rounded-full items-center justify-center shadow-lg border-2 border-white hidden group-hover:flex transition-all hover:scale-110"
+                                >
+                                    <X size={12} className="text-white" strokeWidth={4} />
+                                </button>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+
+                {/* Add your own section */}
+                <div className="border-t-2 border-dashed border-gray-100 pt-8 space-y-6">
+                    <div className="text-center space-y-2">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">OU ADICIONA AS TUAS PRÓPRIAS:</p>
+                        <p className="text-[9px] text-gray-300 font-bold leading-relaxed px-8">
+                            Dica: Escreve um nome, (opcional) faz upload de uma imagem e clica em <strong>"Adicionar Opção"</strong>.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4 max-w-sm mx-auto">
+                        <input
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value)}
+                            placeholder="Ex: Tacos 🌮"
+                            className="w-full text-center text-sm p-4 rounded-2xl border-2 border-gray-100 focus:border-pink-400 outline-none text-gray-700 font-bold shadow-inner bg-gray-50/50"
+                            onKeyDown={(e) => e.key === 'Enter' && addCustomOption()}
+                        />
+
+                        {customImagePreview && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="relative w-24 h-24 mx-auto rounded-[1.5rem] overflow-hidden border-4 border-pink-200 shadow-xl">
+                                <img src={customImagePreview} className="w-full h-full object-cover" alt="preview" />
+                                <button
+                                    onClick={() => { setCustomImagePreview(null); setCustomImageData(null); }}
+                                    className="absolute top-1 right-1 bg-rose-500 rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white"
+                                >
+                                    <X size={10} className="text-white" strokeWidth={4} />
+                                </button>
+                            </motion.div>
+                        )}
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full py-3 bg-white border-2 border-pink-200 text-pink-500 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-pink-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                <Upload size={16} strokeWidth={3} /> Passo 1: Upload de Imagem
+                            </button>
+                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+
+                            <button
+                                onClick={addCustomOption}
+                                disabled={!customName.trim()}
+                                className="w-full py-4 bg-pink-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-pink-600 transition-all disabled:opacity-30 disabled:grayscale shadow-lg shadow-pink-200"
+                            >
+                                + Passo 2: Adicionar Opção
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Surprise Toggle for Conditional Steps */}
+            {step.showIf && (
+                <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    onClick={toggleSurprise}
+                    className={`flex items-center justify-between p-5 rounded-[2rem] cursor-pointer transition-all border-2 max-w-sm mx-auto
+                        ${isSurprise
+                            ? 'bg-rose-50 border-rose-200 shadow-lg shadow-rose-100/50'
+                            : 'bg-white border-gray-100'}`}
+                >
+                    <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-inner ${isSurprise ? 'bg-rose-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                            {isSurprise ? '✨' : '👀'}
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Modo Surpresa</p>
+                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">
+                                {isSurprise ? 'Oculto dela, tu decides!' : 'Ela verá e escolherá a favorita.'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className={`w-12 h-6 rounded-full relative transition-all ${isSurprise ? 'bg-rose-500' : 'bg-gray-200'}`}>
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all ${isSurprise ? 'right-1' : 'left-1'}`} />
+                    </div>
+                </motion.div>
+            )}
         </div>
     );
 }
@@ -500,11 +629,14 @@ export default function Create() {
 
     if (!quizData.questions || quizData.questions.length === 0) return null;
 
-    const currentStep = quizData.questions[currentStepIndex];
-    const isLastStep = currentStepIndex === quizData.questions.length - 1;
+    // Filter active steps based on dynamic logic
+    const activeSteps = resolveActiveSteps(quizData.questions, {}, { isCreatorMode: true });
+
+    const currentStep = activeSteps[currentStepIndex];
+    const isLastStep = currentStepIndex === activeSteps.length - 1;
 
     const handleNext = () => {
-        if (currentStepIndex < quizData.questions.length - 1) {
+        if (currentStepIndex < activeSteps.length - 1) {
             setCurrentStepIndex(prev => prev + 1);
         }
     };
@@ -571,14 +703,13 @@ export default function Create() {
                             </div>
                         )}
 
-                        {/* If no GIF, show URL input to add one */}
                         {!currentStep.gif && (
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <span className="text-xs font-bold text-gray-400 uppercase block mb-2">Image / GIF (Optional)</span>
+                                <span className="text-xs font-bold text-gray-400 uppercase block mb-2">Imagem / GIF (Opcional)</span>
                                 <input
                                     value={''}
                                     onChange={(e) => updateQuestion(currentStep.id, { gif: e.target.value })}
-                                    placeholder="Paste GIF / image URL..."
+                                    placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />
                             </div>
@@ -628,11 +759,11 @@ export default function Create() {
 
                         {!currentStep.gif && (
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <span className="text-xs font-bold text-gray-400 uppercase block mb-2">GIF Below Stars (Optional)</span>
+                                <span className="text-xs font-bold text-gray-400 uppercase block mb-2">GIF Debaixo das Estrelas (Opcional)</span>
                                 <input
                                     value={''}
                                     onChange={(e) => updateQuestion(currentStep.id, { gif: e.target.value })}
-                                    placeholder="Paste GIF / image URL..."
+                                    placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />
                             </div>
@@ -643,19 +774,34 @@ export default function Create() {
             case 'summary':
                 return (
                     <div className="text-center space-y-6">
-                        <h2 className="text-3xl font-black text-gray-800">READY TO SEND?</h2>
+                        <h2 className="text-3xl font-black text-gray-800 uppercase tracking-tight">PRONTO PARA ENVIAR?</h2>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-lg text-left space-y-4 border border-gray-100">
-                            <h3 className="text-xs font-bold text-pink-500 uppercase tracking-widest mb-4 border-b border-pink-100 pb-2">YOUR DATE PLAN</h3>
-                            {quizData.questions.filter(q => q.type !== 'summary').map((q, i) => (
-                                <div key={q.id} className="flex gap-4 items-start">
-                                    <div className="w-6 h-6 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-xs shrink-0 mt-1">{i + 1}</div>
-                                    <div>
-                                        <p className="font-bold text-gray-800 text-sm">{q.title}</p>
-                                        <p className="text-xs text-gray-400">{q.type === 'question' ? 'The Big Question' : q.type}</p>
-                                    </div>
-                                </div>
-                            ))}
+                        {/* Creator Note Editor - Message Style */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white text-xs font-black">YU</div>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">A tua mensagem especial</span>
+                            </div>
+
+                            <div className="relative group">
+                                <textarea
+                                    value={quizData.questions.find(q => q.type === 'calendar')?.config?.creatorNote || ''}
+                                    onChange={(e) => {
+                                        const calendarStep = quizData.questions.find(q => q.type === 'calendar');
+                                        if (calendarStep) {
+                                            updateQuestion(calendarStep.id, {
+                                                config: { ...calendarStep.config, creatorNote: e.target.value }
+                                            });
+                                        }
+                                    }}
+                                    placeholder="Escreve algo fofinho... (Ex: Mal posso esperar para te ver! 💕)"
+                                    className="w-full h-32 bg-white p-6 rounded-[2rem] rounded-tl-none shadow-xl border-2 border-pink-100/50 text-gray-700 font-medium outline-none focus:border-pink-300 transition-all resize-none italic"
+                                />
+                                <div className="absolute -left-2 top-0 w-4 h-4 bg-white border-l-2 border-t-2 border-pink-100/50 rotate-[-45deg]" />
+                            </div>
+                            <p className="text-[9px] text-pink-400 font-bold uppercase tracking-widest animate-pulse">
+                                ✨ Esta mensagem aparecerá com animação no final do convite!
+                            </p>
                         </div>
 
                         <button
@@ -663,7 +809,7 @@ export default function Create() {
                             disabled={isSaving}
                             className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl font-black text-white shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
-                            {isSaving ? 'CREATING...' : 'SAVE & SEND 💌'}
+                            {isSaving ? 'A CRIAR...' : 'GUARDAR & ENVIAR 💌'}
                         </button>
                     </div>
                 );
@@ -680,8 +826,8 @@ export default function Create() {
                 <button onClick={handlePrev} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
                     <ArrowLeft size={24} />
                 </button>
-                <div className="font-bold text-pink-500 uppercase tracking-wider text-xs">
-                    Step {currentStepIndex + 1} of {quizData.questions.length}
+                <div className="font-black text-pink-500 uppercase tracking-widest text-[10px]">
+                    Passo {currentStepIndex + 1} de {activeSteps.length}
                 </div>
                 <div className="w-10" />
             </header>
@@ -706,7 +852,7 @@ export default function Create() {
                                     onClick={handleNext}
                                     className="bg-pink-500 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-pink-600 hover:shadow-pink-500/30 transition-all flex items-center gap-2"
                                 >
-                                    Next Step <ChevronRight size={18} />
+                                    Próximo Passo <ChevronRight size={18} />
                                 </button>
                             </div>
                         )}
@@ -719,13 +865,13 @@ export default function Create() {
                 {createdLinks && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-900/80 backdrop-blur-md">
                         <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl space-y-6">
-                            <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto text-4xl mb-4">🎉</div>
-                            <h2 className="text-3xl font-black text-gray-800">IT'S LIVE!</h2>
-                            <p className="text-gray-500">Your date invitation is ready.</p>
+
+                            <h2 className="text-3xl font-black text-gray-800 uppercase tracking-tight leading-tight">Tudo pronto! 💖</h2>
+                            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest leading-relaxed">Guarda os teus links para não perderes as respostas!</p>
 
                             {/* Link for the girl */}
                             <div className="bg-pink-50 p-4 rounded-xl border border-pink-200 text-left space-y-2">
-                                <p className="text-xs font-bold text-pink-500 uppercase">💌 Link para ela (envia este link)</p>
+                                <p className="text-[10px] font-black text-pink-500 uppercase tracking-widest">💌 Envia este link para ela </p>
                                 <div className="flex gap-2">
                                     <input readOnly value={window.location.origin + createdLinks.publicLink} className="flex-1 bg-white border border-pink-300 rounded-lg p-2 text-sm text-gray-600 font-mono" />
                                     <button onClick={() => navigator.clipboard.writeText(window.location.origin + createdLinks.publicLink)} className="bg-pink-500 text-white p-2 rounded-lg hover:bg-pink-600 transition-colors">
@@ -736,7 +882,7 @@ export default function Create() {
 
                             {/* Link for the creator */}
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-left space-y-2">
-                                <p className="text-xs font-bold text-gray-500 uppercase">👀 Link para ti (ver respostas)</p>
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">👀 Vê as tuas respostas aqui</p>
                                 <div className="flex gap-2">
                                     <input readOnly value={window.location.origin + createdLinks.privateLink} className="flex-1 bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-600 font-mono" />
                                     <button onClick={() => navigator.clipboard.writeText(window.location.origin + createdLinks.privateLink)} className="bg-gray-900 text-white p-2 rounded-lg hover:bg-black transition-colors">
@@ -745,8 +891,8 @@ export default function Create() {
                                 </div>
                             </div>
 
-                            <button onClick={() => window.location.href = createdLinks.privateLink} className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg">
-                                Go to Dashboard →
+                            <button onClick={() => window.location.href = createdLinks.privateLink} className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-pink-200 uppercase tracking-widest text-xs">
+                                Ir para o Painel →
                             </button>
                         </div>
                     </div>
