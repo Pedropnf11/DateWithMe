@@ -12,7 +12,8 @@ export default function ScratchCalendar({ dateOptions = [], onDone }) {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return { day: '??', month: '???', weekday: '????' };
-    const d = new Date(dateStr + 'T00:00:00');
+    const parts = dateStr.split('-');
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
     const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
     const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     return {
@@ -63,7 +64,7 @@ export default function ScratchCalendar({ dateOptions = [], onDone }) {
     }
     const pct = Math.round((cleared / (canvas.width * canvas.height)) * 100);
     setPercent(pct);
-    if (pct > 60 && !revealed) {
+    if (pct > 65 && !revealed) {
       setRevealed(true);
     }
   };
@@ -93,8 +94,8 @@ export default function ScratchCalendar({ dateOptions = [], onDone }) {
         <div
           className="absolute inset-0 bg-white rounded-[2.5rem] border-2 border-pink-50 shadow-inner p-4 overflow-hidden flex flex-col items-center justify-center transition-all duration-500"
           style={{
-            filter: `blur(${Math.max(0, 20 - percent * 0.4)}px)`,
-            opacity: Math.min(1, percent / 40 + 0.1)
+            filter: `blur(${percent < 35 ? 20 : Math.max(0, 20 - (percent - 35) * (20 / (55 - 35)))}px)`,
+            opacity: percent < 35 ? 0.1 : Math.min(1, 0.1 + (percent - 35) * (0.9 / (55 - 35)))
           }}
         >
           <AnimatePresence>

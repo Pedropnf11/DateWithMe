@@ -12,30 +12,33 @@ export function resolveTimeContext(startTime, endTime) {
     const end = toMinutes(endTime);
     const duration = end - start;
 
-    const hasLunch    = start <= 13 * 60 && end >= 14 * 60;
-    const hasSnack    = start <= 16 * 60 && end >= 17 * 60 && duration > 60;
-    const hasDinner   = start <= 20 * 60 && end >= 21 * 60;
+    const hasMadrugada = start >= 0 && start <= 6 * 60;
+    const hasLunch = start <= 13 * 60 && end >= 14 * 60;
+    const hasSnack = start <= 16 * 60 && end >= 17 * 60 && duration > 60;
+    const hasDinner = start <= 20 * 60 && end >= 21 * 60;
     const hasNightOut = end >= 22 * 60 && duration > 120;
     const hasActivity = duration >= 120;
 
-    let badge = '✨ SPECIAL DATE';
-    if (hasNightOut && hasDinner) badge = '🌙 DINNER + NIGHT OUT';
-    else if (hasDinner)           badge = '🍷 DINNER NIGHT';
-    else if (hasLunch)            badge = '🍱 LUNCH DATE';
-    else if (duration > 6 * 60)   badge = '✨ FULL DAY ADVENTURE';
+    let badge = '✨ DIA COMPLETO';
+    if (hasMadrugada) badge = '🌙 MADRUGADA';
+    else if (hasNightOut && hasDinner) badge = '🍷 JANTAR + NOITE';
+    else if (hasDinner) badge = '🍽️ JANTAR';
+    else if (hasLunch) badge = '🍱 ALMOÇO';
+    else if (hasSnack) badge = '☕ LANCHE';
+    else if (duration < 120) badge = '⚡ ENCONTRO RÁPIDO';
 
     return {
         badge,
-        rules: { hasLunch, hasSnack, hasDinner, hasNightOut, hasActivity },
+        rules: { hasMadrugada, hasLunch, hasSnack, hasDinner, hasNightOut, hasActivity },
         durationMinutes: duration
     };
 }
 
 const RULE_MAP = {
-    'lunch':    'hasLunch',
-    'snack':    'hasSnack',
-    'dinner':   'hasDinner',
-    'night_out':'hasNightOut',
+    'lunch': 'hasLunch',
+    'snack': 'hasSnack',
+    'dinner': 'hasDinner',
+    'night_out': 'hasNightOut',
     'activity': 'hasActivity',
 };
 
@@ -44,6 +47,15 @@ export function resolveActiveSteps(allSteps, answers, options = {}) {
 
     return allSteps.filter(step => {
         if (isCreatorMode) return true;
+        if (step.type === 'summary') return false;
+
+        // Skip message steps with no content
+        if (step.type === 'message') {
+            const hasTitle = step.title && step.title.trim().length > 0;
+            const hasSub = step.subtitle && step.subtitle.trim().length > 0;
+            if (!hasTitle && !hasSub) return false;
+        }
+
         if (!step.showIf) return true;
 
         const { stepId, timeRule } = step.showIf;
@@ -65,9 +77,9 @@ export function resolveActiveSteps(allSteps, answers, options = {}) {
         if (typeof chosen === 'string' && chosen.includes(':')) {
             const context = resolveTimeContext(chosen, chosen);
             const virtualSlots = [];
-            if (context.rules.hasLunch)    virtualSlots.push('morning');
-            if (context.rules.hasSnack)    virtualSlots.push('afternoon');
-            if (context.rules.hasDinner)   virtualSlots.push('evening');
+            if (context.rules.hasLunch) virtualSlots.push('morning');
+            if (context.rules.hasSnack) virtualSlots.push('afternoon');
+            if (context.rules.hasDinner) virtualSlots.push('evening');
             if (context.rules.hasNightOut) virtualSlots.push('night_out');
             virtualSlots.push('full_day');
             return step.showIf?.timeSlot?.some(slot => virtualSlots.includes(slot));

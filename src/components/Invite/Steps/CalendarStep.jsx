@@ -21,7 +21,7 @@ export default function CalendarStep({ step, onAnswer }) {
     const [openPicker, setOpenPicker] = useState(null); // 'start' | 'end' | null
 
     const libertyMessage = config.libertyMessage || 'Para ti tenho todo o tempo do mundo...';
-    const libertyGif = config.libertyGif || 'https://media.tenor.com/CAtqFqK_2i0AAAAd/dance-girl.gif';
+    const libertyGif = config.libertyGif || 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnNkZ3Nyd3kzem5yMTUxOHQ4Zms1cm0xamM4MnExbWRmdnRqNXBmMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l2JIdU9G4NwGBua0U/giphy.gif';
 
     // When a date is selected in suggestion mode, pre-fill its times
     useEffect(() => {
@@ -47,7 +47,10 @@ export default function CalendarStep({ step, onAnswer }) {
     const days = [];
     const cur = new Date(startOfGrid);
     while (cur <= endOfGrid) {
-        const ds = cur.toISOString().split('T')[0];
+        const year = cur.getFullYear();
+        const month = String(cur.getMonth() + 1).padStart(2, '0');
+        const day = String(cur.getDate()).padStart(2, '0');
+        const ds = `${year}-${month}-${day}`;
         days.push({
             date: new Date(cur), dateStr: ds,
             inRange: cur >= today && cur <= end30,
@@ -66,7 +69,8 @@ export default function CalendarStep({ step, onAnswer }) {
             : `${s}. → ${e}. ${end30.getFullYear()}`;
     })();
 
-    const canConfirm = selectedDate && customStart && customEnd;
+    const isTimeValid = !customStart || !customEnd || toMinutes(customEnd) > toMinutes(customStart);
+    const canConfirm = selectedDate && customStart && customEnd && isTimeValid;
 
     const handleConfirm = () => {
         if (!canConfirm) return;
@@ -170,6 +174,17 @@ export default function CalendarStep({ step, onAnswer }) {
 
                         {/* ── VISUAL JOURNEY ── */}
                         <div className="relative pt-2 px-2">
+                            {!isTimeValid && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="text-center mb-4"
+                                >
+                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 py-2 rounded-xl border border-rose-100 px-4">
+                                        ⚠️ A hora de fim deve ser depois da hora de início
+                                    </p>
+                                </motion.div>
+                            )}
                             <div className="flex items-center justify-between relative px-2">
                                 <div className="absolute left-4 right-4 h-1 bg-gray-50 top-1/2 -translate-y-1/2 z-0" />
                                 {[

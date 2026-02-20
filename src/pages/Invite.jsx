@@ -14,21 +14,22 @@ import CalendarStep from '../components/Invite/Steps/CalendarStep';
 import RatingStep from '../components/Invite/Steps/RatingStep';
 import HappyGifStep from '../components/Invite/Steps/HappyGifStep';
 import TextInputStep from '../components/Invite/Steps/TextInputStep';
+import MessageStep from '../components/Invite/Steps/MessageStep';
 
 export default function Invite() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [invite, setInvite]           = useState(null);
-    const [loading, setLoading]         = useState(true);
-    const [answers, setAnswers]         = useState({});
+    const [invite, setInvite] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [answers, setAnswers] = useState({});
     const [activeSteps, setActiveSteps] = useState([]);
     const [currentStep, setCurrentStep] = useState(0);
     // 'quiz' | 'summary' | 'success'
-    const [phase, setPhase]             = useState('quiz');
+    const [phase, setPhase] = useState('quiz');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const templateId = invite?.content?.templateId ?? '';
-    const isSpecial  = templateId === 'special';
+    const isSpecial = templateId === 'special';
 
     useEffect(() => {
         async function fetchInvite() {
@@ -56,8 +57,8 @@ export default function Invite() {
         const newAnswers = { ...answers, [questionId]: answer };
         setAnswers(newAnswers);
 
-        const allSteps   = invite.content.steps;
-        const newActive  = resolveActiveSteps(allSteps, newAnswers);
+        const allSteps = invite.content.steps;
+        const newActive = resolveActiveSteps(allSteps, newAnswers);
         setActiveSteps(newActive);
 
         const nonSummarySteps = newActive.filter(s => s.type !== 'summary');
@@ -94,9 +95,9 @@ export default function Invite() {
 
         await supabase.rpc('submit_response', {
             invite_uuid: id,
-            p_decisao:   accepted ? 'sim' : 'nao',
-            p_answers:   answers,
-            p_mensagem:  null,
+            p_decisao: accepted ? 'sim' : 'nao',
+            p_answers: answers,
+            p_mensagem: null,
         });
 
         setIsSubmitting(false);
@@ -142,13 +143,14 @@ export default function Invite() {
     // ── Phase: Success ───────────────────────────────────────────
     if (phase === 'success') {
         const calendarStep = invite.content.steps.find(s => s.type === 'calendar');
-        const creatorNote  = calendarStep?.config?.creatorNote;
+        const creatorNote = calendarStep?.config?.creatorNote;
         return (
             <SuccessView
                 onResponse={submitResponse}
                 isSubmitting={isSubmitting}
                 creatorNote={creatorNote}
                 answers={answers}
+                templateId={templateId}
             />
         );
     }
@@ -172,6 +174,8 @@ export default function Invite() {
                 return <RatingStep step={step} onAnswer={handleAnswer} />;
             case 'text_input':
                 return <TextInputStep step={step} onAnswer={handleAnswer} />;
+            case 'message':
+                return <MessageStep step={step} onAnswer={handleAnswer} />;
             default:
                 return (
                     <div className="text-center">
@@ -221,13 +225,12 @@ export default function Invite() {
                     {visibleSteps.map((_, i) => (
                         <div
                             key={i}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                                i === currentStep
-                                    ? 'bg-pink-500 w-4'
-                                    : i < currentStep
-                                        ? 'bg-pink-300'
-                                        : 'bg-gray-200'
-                            }`}
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === currentStep
+                                ? 'bg-pink-500 w-4'
+                                : i < currentStep
+                                    ? 'bg-pink-300'
+                                    : 'bg-gray-200'
+                                }`}
                         />
                     ))}
                 </div>

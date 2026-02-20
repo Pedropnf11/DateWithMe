@@ -11,32 +11,32 @@
 // A função resolveActiveSteps() em utils.js interpreta estas regras com base em
 // { startTime, endTime } guardados na resposta do step_date.
 
-import f_italian from '../assets/f_italian.png';
-import f_sushi from '../assets/f_sushi.png';
-import f_francesinha from '../assets/f_francesinha.png';
-import f_mexican from '../assets/f_mexican.png';
-import f_coffe from '../assets/f_coffe.png';
-import f_icook_m from '../assets/f-icook_m.png';
-import f_icookHome_n from '../assets/f_icookHome_n.png';
+import f_italian from '../assets/foods/f_italian.png';
+import f_sushi from '../assets/foods/f_sushi.png';
+import f_francesinha from '../assets/foods/f_francesinha.png';
+import f_mexican from '../assets/foods/f_mexican.png';
+import f_coffe from '../assets/foods/f_coffe.png';
+import f_icook_m from '../assets/foods/f-icook_m.png';
+import f_icookHome_n from '../assets/foods/f_icookHome_n.png';
+import f_hamburger from '../assets/foods/f_hamburger.png';
 
-import a_icecream from '../assets/a_icecream.png';
-import a_Gameroom from '../assets/a_Gameroom.png';
-import a_MovieHouse from '../assets/a_MovieHouse.png';
-import a_aquashow from '../assets/a_aquashow.png';
-import a_bar_n from '../assets/a_bar_n.png';
-import a_bowlling from '../assets/a_bowlling.png';
-import a_cinema from '../assets/a_cinema.png';
-import a_gameHome_img from '../assets/a_gameHome_img.png';
-import a_golf from '../assets/a_golf.png';
-import a_museu from '../assets/a_museu.png';
-import a_painting from '../assets/a_painting.png';
-import a_piquenique from '../assets/a_piquenique.png';
-import a_reading from '../assets/a_reading.png';
-import a_videogames from '../assets/a_videogames.png';
-import f_hamburger from '../assets/f_hamburger.png';
-import a_walk_n from '../assets/a_walk_n.png';
-import a_disco from '../assets/a_disco_n.png';
-import a_açai from '../assets/a_açai.png';
+import a_icecream from '../assets/activities/a_icecream.png';
+import a_Gameroom from '../assets/activities/a_Gameroom.png';
+import a_MovieHouse from '../assets/activities/a_MovieHouse.png';
+import a_aquashow from '../assets/activities/a_aquashow.png';
+import a_bar_n from '../assets/activities/a_bar_n.png';
+import a_bowlling from '../assets/activities/a_bowlling.png';
+import a_cinema from '../assets/activities/a_cinema.png';
+import a_gameHome_img from '../assets/activities/a_gameHome_img.png';
+import a_golf from '../assets/activities/a_golf.png';
+import a_museu from '../assets/activities/a_museu.png';
+import a_painting from '../assets/activities/a_painting.png';
+import a_piquenique from '../assets/activities/a_piquenique.png';
+import a_reading from '../assets/activities/a_reading.png';
+import a_videogames from '../assets/activities/a_videogames.png';
+import a_walk_n from '../assets/activities/a_walk_n.png';
+import a_disco from '../assets/activities/a_disco_n.png';
+import a_açai from '../assets/activities/a_açai.png';
 
 export const TEMPLATE_SPECIAL = {
     id: 'special',
@@ -51,7 +51,7 @@ export const TEMPLATE_SPECIAL = {
             stepLabel: 'PASSO 1. O CONVITE',
             title: 'Queres passar uma noite especial comigo? ✨',
             subtitle: "Diz que sim — não te vais arrepender 😏",
-            gif: null,
+            gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp3ZDlwbG9zbzIzanU4dWFyYWt0ZGNsN292d2RweHZtYjE1azdrYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sWBzg2D15WwQjHcxbt/giphy.gif',
             config: {
                 noButtonBehavior: 'growing_yes',
                 noUnlocksAfter: 5,
@@ -62,9 +62,10 @@ export const TEMPLATE_SPECIAL = {
         // ── STEP 3 — Mensagem preparação ────────────────────────
         {
             id: 'step_vibe',
-            type: 'ranking',
-            title: 'Mensagem preparação para o date',
-            subtitle: 'Tudo parece perfeito. Estás pronta?'
+            type: 'message',
+            stepLabel: 'PASSO 2. A TUA MENSAGEM',
+            title: '',
+            subtitle: ''
         },
 
         // ── STEP 4 — Calendário ────────────────────────────────
@@ -173,15 +174,6 @@ export const TEMPLATE_SPECIAL = {
             ]
         },
 
-        // ── Rating ────────────────────────────────────────────
-        {
-            id: 'step_rating',
-            type: 'rating',
-            stepLabel: 'AVALIAÇÃO',
-            title: 'Supreendi desta vez não foi? 😏',
-            subtitle: 'Diz-me a verdade de 1 a 5 estrelas',
-            config: { maxStars: 5 }
-        },
 
 
         // ── Summary ───────────────────────────────────────────

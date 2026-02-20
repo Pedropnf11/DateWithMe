@@ -1,8 +1,27 @@
+import f_sushi from '../assets/foods/f_sushi.png';
+import f_italian from '../assets/foods/f_italian.png';
+import f_hamburger from '../assets/foods/f_hamburger.png';
+import f_mexican from '../assets/foods/f_mexican.png';
+import f_francesinha from '../assets/foods/f_francesinha.png';
+import f_coffe from '../assets/foods/f_coffe.png';
+import f_icookHome_n from '../assets/foods/f_icookHome_n.png';
+
+import a_cinema from '../assets/activities/a_cinema.png';
+import a_bowlling from '../assets/activities/a_bowlling.png';
+import a_piquenique from '../assets/activities/a_piquenique.png';
+import a_golf from '../assets/activities/a_golf.png';
+import a_museu from '../assets/activities/a_museu.png';
+import a_walk_n from '../assets/activities/a_walk_n.png';
+import a_Gameroom from '../assets/activities/a_Gameroom.png';
+import a_painting from '../assets/activities/a_painting.png';
+import a_aquashow from '../assets/activities/a_aquashow.png';
+
 export const TEMPLATE_FIRST = {
     id: 'first_date',
     label: 'Quebra o Gelo',
     description: 'Para quando queres impressionar logo à primeira.',
     steps: [
+        // ── STEP 1 — Convite ──────────────────────────────────
         {
             id: 'step_question',
             type: 'question',
@@ -13,13 +32,17 @@ export const TEMPLATE_FIRST = {
                 noButtonBehavior: 'block_cute',
             }
         },
+
+        // ── STEP 2 — GIF Feliz ────────────────────────────────
         {
             id: 'step_happy_gif',
             type: 'happy_gif',
             stepLabel: 'PASSO 2. GIF FELIZ',
             title: 'Escolhe um GIF para quando ela disser SIM!',
-            gif: null
+            gif: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdDlrYXh6dG54MGJrcnEzcGZrdGNkYTB1MWRqZmdjd3lxa3Btdmc2aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cXblnKXr2BQOaYnTni/giphy.gif'
         },
+
+        // ── STEP 3 — Calendário ───────────────────────────────
         {
             id: 'step_date',
             type: 'calendar',
@@ -29,54 +52,51 @@ export const TEMPLATE_FIRST = {
                 mode: 'liberty',
                 suggestedDates: [],
                 calendarMessage: 'Para ti arranjo sempre tempo 💕',
-                creatorNote: 'Mal posso esperar para te ver! 💕',
                 timeRangeMode: true,
                 libertyMessage: 'Para ti tenho todo o tempo do mundo...',
-                libertyGif: 'https://media.tenor.com/CAtqFqK_2i0AAAAd/dance-girl.gif',
+                libertyGif: 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnNkZ3Nyd3kzem5yMTUxOHQ4Zms1cm0xamM4MnExbWRmdnRqNXBmMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l2JIdU9G4NwGBua0U/giphy.gif',
             }
         },
+
+        // ── STEP 4 — Comida (sempre aparece) ──────────────────
         {
             id: 'step_food',
             type: 'ranking',
             stepLabel: 'COMIDA',
             title: 'O que vamos comer?',
             subtitle: 'Escolhe a tua favorita.',
-            showIf: { stepId: 'step_date', timeRule: 'dinner' },
             options: [
-                { label: 'Sushi', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=400&fit=crop' },
-                { label: 'Pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop' },
-                { label: 'Burgers', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop' },
-                { label: 'Tacos', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=400&fit=crop' }
+                { label: 'Sushi', image: f_sushi },
+                { label: 'Italiano', image: f_italian },
+                { label: 'Burgers', image: f_hamburger },
+                { label: 'Mexican', image: f_mexican },
+                { label: 'Francesinha', image: f_francesinha },
+                { label: 'Café / Doces', image: f_coffe },
+                { label: 'Cozinho eu!', image: f_icookHome_n },
             ]
         },
-        {
-            id: 'step_lunch',
-            type: 'ranking',
-            stepLabel: 'ALMOÇO',
-            title: 'O que vamos almoçar?',
-            subtitle: 'Escolhe a tua favorita.',
-            showIf: { stepId: 'step_date', timeRule: 'lunch' },
-            options: [
-                { label: 'Italiano', image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=600&h=600&fit=crop' },
-                { label: 'Sushi', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=600&fit=crop' },
-                { label: 'Hamburguer', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=600&fit=crop' },
-                { label: 'Tacos', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&h=600&fit=crop' },
-            ]
-        },
+
+        // ── STEP 5 — Atividade (sempre aparece) ───────────────
         {
             id: 'step_activity',
             type: 'ranking',
             stepLabel: 'ATIVIDADE',
             title: 'O que vamos fazer?',
             subtitle: 'Escolhe a tua favorita.',
-            showIf: { stepId: 'step_date', timeRule: 'activity' },
             options: [
-                { label: 'Cinema', image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=400&fit=crop' },
-                { label: 'Bowling', image: 'https://images.unsplash.com/photo-1538514104992-0b2a5789729d?w=400&h=400&fit=crop' },
-                { label: 'Parque', image: 'https://images.unsplash.com/photo-1476994230281-1448088947db?w=400&h=400&fit=crop' },
-                { label: 'Mini Golf', image: 'https://images.unsplash.com/photo-1592388796859-99a380cecb7e?w=400&h=400&fit=crop' }
+                { label: 'Cinema', image: a_cinema },
+                { label: 'Bowling', image: a_bowlling },
+                { label: 'Arcade / Jogos', image: a_Gameroom },
+                { label: 'Mini Golf', image: a_golf },
+                { label: 'Museu', image: a_museu },
+                { label: 'Painting Date', image: a_painting },
+                { label: 'Aquário', image: a_aquashow },
+                { label: 'Passeio', image: a_walk_n },
+                { label: 'Piquenique', image: a_piquenique },
             ]
         },
+
+        // ── STEP 6 — Avaliação ────────────────────────────────
         {
             id: 'step_rating',
             type: 'rating',
@@ -87,6 +107,8 @@ export const TEMPLATE_FIRST = {
                 maxStars: 5
             }
         },
+
+        // ── STEP 7 — Resumo ───────────────────────────────────
         {
             id: 'step_summary',
             type: 'summary',

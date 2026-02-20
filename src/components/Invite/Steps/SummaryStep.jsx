@@ -75,7 +75,7 @@ export default function SummaryStep({ answers, onConfirm, isSubmitting }) {
                 </p>
             </div>
 
-            {badge && (
+            {badge && answers?.templateId === 'special' && (
                 <div className="text-center">
                     <span className="px-4 py-1.5 bg-pink-50 text-pink-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-pink-100">
                         {badge}

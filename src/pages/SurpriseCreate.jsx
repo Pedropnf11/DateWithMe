@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, MapPin, Plus, Trash2, ChevronRight, Check, Clock, Sparkles, X } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Plus, Trash2, ChevronRight, Check, Clock, Sparkles, X, ArrowLeft, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import useSurpriseStore from '../store/useSurpriseStore';
 import TimePickerOverlay from '../components/Invite/Steps/TimePickerOverlay';

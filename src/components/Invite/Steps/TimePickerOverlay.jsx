@@ -22,7 +22,7 @@ export default function TimePickerOverlay({ value, onChange, isOpen, onClose }) 
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 10 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[2rem] shadow-2xl border border-pink-100 p-4 z-[110] flex flex-col gap-4 min-w-[200px]"
+                        className="fixed inset-x-4 bottom-10 bg-white rounded-[2.5rem] shadow-2xl border-2 border-pink-100 p-6 z-[110] flex flex-col gap-4 min-w-[200px] sm:absolute sm:top-full sm:bottom-auto sm:left-0 sm:right-0 sm:inset-x-auto sm:mt-2"
                     >
                         <div className="flex gap-4 h-48">
                             <div className="flex-1 overflow-y-auto px-1 custom-scrollbar">

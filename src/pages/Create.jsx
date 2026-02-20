@@ -679,6 +679,29 @@ export default function Create() {
     const renderStepContent = () => {
         switch (currentStep.type) {
 
+            case 'message':
+                return (
+                    <div className="space-y-6 text-center">
+                        <h2 className="text-2xl font-black text-pink-500 uppercase tracking-wide">
+                            {currentStep.stepLabel}
+                        </h2>
+                        <textarea
+                            value={currentStep.title}
+                            onChange={(e) => updateQuestion(currentStep.id, { title: e.target.value })}
+                            rows={2}
+                            placeholder="Título da mensagem (ex: Mensagem de preparação...)"
+                            className="w-full text-center text-3xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-pink-500 focus:outline-none pb-2 placeholder-gray-300 resize-none overflow-hidden"
+                        />
+                        <textarea
+                            value={currentStep.subtitle || ''}
+                            onChange={(e) => updateQuestion(currentStep.id, { subtitle: e.target.value })}
+                            rows={3}
+                            className="w-full text-center text-sm font-medium text-gray-400 bg-transparent border-none focus:outline-none resize-none overflow-hidden"
+                            placeholder="Escreve um toque pessoal..."
+                        />
+                    </div>
+                );
+
             case 'question':
                 return (
                     <div className="space-y-6 text-center">
@@ -779,20 +802,20 @@ export default function Create() {
                 );
 
             case 'summary': {
-                const allQ   = quizData.questions;
-                const calQ   = allQ.find(q => q.type === 'calendar');
-                const foodQ  = allQ.find(q => q.id === 'step_food' || q.id === 'step_lunch' || q.id === 'step_dinner');
-                const actQ   = allQ.find(q => q.id === 'step_activity' || q.id === 'step_after_activity');
+                const allQ = quizData.questions;
+                const calQ = allQ.find(q => q.type === 'calendar');
+                const foodQ = allQ.find(q => q.id === 'step_food' || q.id === 'step_lunch' || q.id === 'step_dinner');
+                const actQ = allQ.find(q => q.id === 'step_activity' || q.id === 'step_after_activity');
                 const snackQ = allQ.find(q => q.id === 'step_snack');
                 const nightQ = allQ.find(q => q.id === 'step_night_out');
                 const firstActive = (q) => q?.options?.filter(o => !o.excluded)?.[0]?.label;
 
                 const summaryItems = [
                     { emoji: '📅', label: 'Calendário', value: calQ?.config?.mode === 'liberty' ? 'Modo livre — ela escolhe qualquer dia' : `${calQ?.config?.suggestedDates?.length || 0} dia(s) sugerido(s)` },
-                    { emoji: '🍽️', label: 'Comida',     value: firstActive(foodQ)  ? `${firstActive(foodQ)} + mais opções`  : null },
-                    { emoji: '☕',  label: 'Lanche',     value: firstActive(snackQ) ? `${firstActive(snackQ)} + mais opções` : null },
-                    { emoji: '🎯', label: 'Atividade',   value: firstActive(actQ)   ? `${firstActive(actQ)} + mais opções`   : null },
-                    { emoji: '🌙', label: 'Noite',       value: firstActive(nightQ) ? `${firstActive(nightQ)} + mais opções` : null },
+                    { emoji: '🍽️', label: 'Comida', value: firstActive(foodQ) ? `${firstActive(foodQ)} + mais opções` : null },
+                    { emoji: '☕', label: 'Lanche', value: firstActive(snackQ) ? `${firstActive(snackQ)} + mais opções` : null },
+                    { emoji: '🎯', label: 'Atividade', value: firstActive(actQ) ? `${firstActive(actQ)} + mais opções` : null },
+                    { emoji: '🌙', label: 'Noite', value: firstActive(nightQ) ? `${firstActive(nightQ)} + mais opções` : null },
                 ].filter(i => i.value);
 
                 return (

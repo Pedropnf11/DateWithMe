@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TEMPLATES } from '../data/templates';
 import useQuizStore from '../store/useQuizStore';
 import { useNavigate } from 'react-router-dom';
-import { Star, Heart, Calendar, Play, X, ChevronRight, Trash2, Plus, Copy, Check, Smartphone, Tablet, User, Info, AlertCircle, Quote } from 'lucide-react';
+import { Star, Heart, Calendar, Play, X, ChevronRight, Trash2, Plus, Copy, Check, Smartphone, Tablet, User, Info, AlertCircle, Quote, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-import heroCouple1 from '../assets/hero-couple.png';
-import heroCouple2 from '../assets/hero-couple-2.png';
+import heroCouple1 from '../assets/home/hero-couple.png';
+import heroCouple2 from '../assets/home/hero-couple-2.png';
 
 // ── Import do FlirtDeck real (com prop compact) ──────────────────
 import FlirtDeck from './FlirtDeck';
@@ -21,7 +21,7 @@ const DEFAULT_DECK = {
         { title: 'Sem jogos' },
     ],
     funFacts: [
-        'Consigo fazer panquecas às 2 da manhã ',
+        'Consigo fazer panquecas às 2    da manhã ',
         'Sei as letras todas desta música ',
         'Nunca mexo no telemóvel durante os filmes ',
     ],
@@ -105,6 +105,43 @@ function generateDeckLink(deckData) {
     const str = JSON.stringify(deckData);
     const b64 = btoa(unescape(encodeURIComponent(str)));
     return `${window.location.origin}/flirt-deck?d=${b64}`;
+}
+
+// ── FAQ Item Component ──────────────────────────────────────────
+function FAQItem({ question, answer }) {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div className="border-b border-pink-100 last:border-0">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full py-6 flex justify-between items-center text-left gap-4 group"
+            >
+                <span className={`text-lg font-black transition-colors ${isOpen ? 'text-pink-600' : 'text-gray-800 group-hover:text-pink-500'}`}>
+                    {question}
+                </span>
+                <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isOpen ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-400'}`}
+                >
+                    <ChevronDown size={18} />
+                </motion.div>
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <p className="pb-6 text-gray-500 font-medium leading-relaxed">
+                            {answer}
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -228,7 +265,7 @@ export default function Home() {
                 <div className="bg-white/90 backdrop-blur-md rounded-full px-8 py-3 shadow-lg border border-pink-100 flex items-center justify-between w-full max-w-4xl">
                     <div className="font-extrabold text-2xl text-pink-600 tracking-tighter">DateWithMe</div>
                     <div className="flex gap-6 items-center">
-                        <a href="#" className="hidden md:block font-bold text-gray-500 hover:text-pink-500 text-sm transition-colors uppercase tracking-widest text-[10px]">Perguntas Frequentes</a>
+                        <a href="#faq" onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }} className="hidden md:block font-bold text-gray-500 hover:text-pink-500 text-sm transition-colors uppercase tracking-widest text-[10px]">Perguntas Frequentes</a>
                         <button
                             onClick={() => setIsModalOpen(true)}
                             className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-2 rounded-full font-black text-xs shadow-md transition-all transform hover:scale-105 uppercase tracking-widest"
@@ -315,29 +352,36 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* TikTok */}
-            <section className="max-w-5xl mx-auto bg-white rounded-[3rem] shadow-2xl overflow-hidden mb-32 flex flex-col md:flex-row">
-                <div className="md:w-1/2 bg-gray-100 flex items-center justify-center p-10 relative">
-                    <div className="absolute inset-0 bg-cover bg-center opacity-50" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1596701833075-4d7a465191c2?q=80&w=2670&auto=format&fit=crop)' }} />
-                    <div className="relative z-10 w-16 h-16 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-lg">
-                        <Play className="ml-1 text-gray-800" fill="currentColor" />
-                    </div>
-                    <div className="absolute bottom-4 text-white font-black text-sm drop-shadow-md uppercase tracking-widest">Ver no TikTok</div>
+
+
+            {/* FAQ Section */}
+            <section id="faq" className="max-w-4xl mx-auto px-6 py-32">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-5xl font-black text-pink-600 uppercase tracking-tight mb-4">Perguntas Frequentes</h2>
+                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Tudo o que precisas de saber para começar</p>
                 </div>
-                <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center text-center md:text-left">
-                    <h2 className="text-3xl md:text-4xl font-black text-pink-600 mb-6 uppercase tracking-tight leading-tight">
-                        O segredo que vai correr o TikTok todo
-                    </h2>
-                    <p className="text-gray-600 mb-8 font-medium leading-relaxed">
-                        Milhares de casais estão a usar o DateWithMe para criar encontros que parecem saídos de um filme. Não é sorte — é ter a ferramenta certa.<br /><br />
-                        Pronto para seres o protagonista da próxima história de amor viral?
-                    </p>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-pink-500 text-white px-8 py-4 rounded-full font-black shadow-lg hover:bg-pink-600 transition-colors uppercase text-xs tracking-widest w-max mx-auto md:mx-0"
-                    >
-                        CRIA O TEU CONVITE AGORA
-                    </button>
+
+                <div className="bg-white/80 backdrop-blur-md rounded-[3rem] p-8 md:p-12 shadow-xl border border-white">
+                    <FAQItem
+                        question="O que é o DateWithMe?"
+                        answer="É uma plataforma feita para ajudar-te a criar convites interativos e românticos para o teu date em menos de 3 minutos. Podes personalizar atividades, horários e até adicionar surpresas."
+                    />
+                    <FAQItem
+                        question="É gratuito?"
+                        answer={<>Sim! O DateWithMe é totalmente <strong className="font-black text-pink-600">gratuito temporariamente</strong>, aproveita! Podes criar e partilhar convites sem qualquer custo.</>}
+                    />
+                    <FAQItem
+                        question="Preciso de criar conta ou fazer registo?"
+                        answer="Não. Valorizamos a tua privacidade e rapidez. Podes começar a criar o teu convite agora mesmo sem dar o teu email ou criar passwords."
+                    />
+                    <FAQItem
+                        question="Quanto tempo duram os links?"
+                        answer="Por questões de segurança e privacidade, os links e as respostas expiram automaticamente após 24 horas. É uma experiência efémera, focada no momento."
+                    />
+                    <FAQItem
+                        question="Ela precisa de instalar alguma app?"
+                        answer="Não. O convite abre diretamente no navegador do telemóvel dela (Safari, Chrome, etc.), como um site normal. Funciona perfeitamente em qualquer smartphone."
+                    />
                 </div>
             </section>
 

@@ -8,7 +8,7 @@ interface RedFlagsSlideProps {
 }
 
 export default function RedFlagsSlide({ data, showFlag, setShowFlag, compact }: RedFlagsSlideProps) {
-    const severityLabel = (s: number) => s <= 1 ? "Tiny 🟡" : s <= 2 ? "Mild 🟠" : "Uh oh 🔴";
+    const severityLabel = (s: number) => s <= 1 ? "Pequeno 🟡" : s <= 2 ? "Médio 🟠" : "Grave 🔴";
 
     return (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: compact ? 16 : 28 }}>

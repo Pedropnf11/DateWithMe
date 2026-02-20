@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import iconPromess from "../../../assets/emote/icon_promess.png";
 
 interface RateMeSlidProps {
     rating: number | null;
@@ -158,9 +159,14 @@ export default function RateMeSlide({
                         fontSize: 13,
                         color: "rgba(255,255,255,0.6)",
                         margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8
                     }}
                 >
                     Não mintas, pinky promise não se quebra.
+                    <img src={iconPromess} alt="pinky promise" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 </p>
             </div>
 
@@ -323,7 +329,7 @@ export default function RateMeSlide({
                     }
                 }}
             >
-                {submitted ? "Obrigado" : "Submit my verdict"}
+                {submitted ? "Obrigado" : "Enviar"}
             </button>
 
             {/* POPUPS */}
