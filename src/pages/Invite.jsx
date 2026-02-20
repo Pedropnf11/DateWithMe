@@ -32,20 +32,26 @@ export default function Invite() {
     const isSpecial = templateId === 'special';
 
     useEffect(() => {
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
         async function fetchInvite() {
-            const { data, error } = await supabase
-                .from('invites')
-                .select('id, content, status')
-                .eq('id', id)
-                .single();
-            if (!error && data) {
+            if (!id || !UUID_REGEX.test(id)) {
+                setLoading(false);
+                setInvite(null);
+                return;
+            }
+
+            const { data, error } = await supabase.rpc('get_safe_invite', { p_invite_id: id });
+
+            if (!error && data && data.length > 0) {
+                const inviteData = data[0];
                 // Redirecionar surpresas para a rota correta
-                if (data.content?.templateId === 'surprise') {
-                    navigate(`/surpresa/${data.id}`, { replace: true });
+                if (inviteData.content?.templateId === 'surprise') {
+                    navigate(`/surpresa/${inviteData.id}`, { replace: true });
                     return;
                 }
-                setInvite(data);
-                const initial = resolveActiveSteps(data.content.steps, {});
+                setInvite(inviteData);
+                const initial = resolveActiveSteps(inviteData.content.steps, {});
                 setActiveSteps(initial);
             }
             setLoading(false);

@@ -1,28 +1,56 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { supabase, getSupabaseClient } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Loader2, Heart, Calendar, Clock, MapPin, Star, MessageSquare } from 'lucide-react';
 
 export default function Result() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
-    const key = searchParams.get('key');
 
     const [invite, setInvite] = useState(null);
     const [responses, setResponses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Get key from search params OR session storage
+    const [key, setKey] = useState(() => {
+        const urlKey = searchParams.get('key');
+        const sessionKey = localStorage.getItem(`ck_${id}`);
+
+        // If key is in URL, move it to local storage and clean URL
+        if (urlKey) {
+            localStorage.setItem(`ck_${id}`, urlKey);
+            window.history.replaceState({}, '', window.location.pathname);
+            return urlKey;
+        }
+        return sessionKey;
+    });
+
+    useEffect(() => {
+        if (searchParams.get('key')) {
+            const newKey = searchParams.get('key');
+            localStorage.setItem(`ck_${id}`, newKey);
+            setKey(newKey);
+            // Clean URL
+            window.history.replaceState({}, '', `/resultado/${id}`);
+        }
+    }, [id, searchParams]);
+
     useEffect(() => {
         async function fetchData() {
-            setLoading(true);
-            const client = getSupabaseClient(key);
+            if (!key) {
+                setError('Acesso negado. Precisas da chave de criador.');
+                setLoading(false);
+                return;
+            }
 
-            // Verify access
-            const { data: inviteData, error: inviteError } = await client
+            setLoading(true);
+
+            // 1. Fetch invite info (publicly available fields only)
+            const { data: inviteData, error: inviteError } = await supabase
                 .from('invites')
-                .select('id, content, status, created_at, creator_key')
+                .select('id, content, status, created_at')
                 .eq('id', id)
                 .single();
 
@@ -31,29 +59,30 @@ export default function Result() {
                 setLoading(false);
                 return;
             }
+            setInvite(inviteData);
 
-            // Client side verification as fallback
-            if (inviteData.creator_key !== key) {
-                setError('Acesso negado. Precisas da chave de criador correta.');
+            // 2. Fetch responses via secure RPC (validates key on server)
+            const { data: respData, error: respError } = await supabase
+                .rpc('get_invite_results', {
+                    invite_uuid: id,
+                    p_key: key
+                });
+
+            if (respError) {
+                console.error('RPC Error:', respError);
+                setError('Não foi possível carregar as respostas. Verifica se tens a chave correta.');
                 setLoading(false);
                 return;
             }
 
-            setInvite(inviteData);
-
-            // Fetch responses using the client with the creatorKey header
-            const { data: respData, error: respError } = await client
-                .from('responses')
-                .select('*')
-                .eq('invite_id', id)
-                .order('created_at', { ascending: false });
-
-            if (!respError) {
-                setResponses(respData);
-            }
+            setResponses(respData || []);
             setLoading(false);
         }
-        fetchData();
+        if (id && key) fetchData();
+        else if (id && !key) {
+            setLoading(false);
+            setError('Acesso negado. Chave de criador necessária.');
+        }
     }, [id, key]);
 
     if (loading) return (
@@ -152,7 +181,11 @@ export default function Result() {
                                                             <div className="flex items-center gap-3 text-left">
                                                                 <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{step.title}</span>
                                                             </div>
-                                                            <span className="text-sm font-black text-gray-800 text-right">{typeof val === 'string' ? val : (val.label || JSON.stringify(val))}</span>
+                                                            <span className="text-sm font-black text-gray-800 text-right">
+                                                                {typeof val === 'string'
+                                                                    ? val
+                                                                    : (val.label || 'Opção selecionada')}
+                                                            </span>
                                                         </div>
                                                     );
                                                 })}

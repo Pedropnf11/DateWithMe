@@ -166,7 +166,17 @@ function CalendarStep({ step, updateQuestion }) {
                                 )}
                                 <input
                                     value={config.libertyGif || ''}
-                                    onChange={(e) => updateQuestion(step.id, { config: { ...config, libertyGif: e.target.value } })}
+                                    onChange={(e) => {
+                                        const url = e.target.value;
+                                        const SAFE = ['giphy.com', 'tenor.com', 'imgur.com'];
+                                        try {
+                                            if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
+                                                alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
+                                                return;
+                                            }
+                                        } catch { /* ignore invalid URL while typing */ }
+                                        updateQuestion(step.id, { config: { ...config, libertyGif: url } });
+                                    }}
                                     placeholder="Link do GIF..."
                                     className="flex-1 bg-white px-4 py-3 rounded-xl border border-gray-100 text-[10px] text-gray-400 font-mono outline-none focus:border-pink-300 transition-all shadow-sm"
                                 />
@@ -300,6 +310,18 @@ function HappyGifStep({ step, updateQuestion }) {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        // Security Fix: Validate type and size
+        const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!ALLOWED.includes(file.type)) {
+            alert('Apenas imagens (JPG, PNG, GIF, WEBP) são permitidas.');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('O ficheiro é demasiado grande. Máximo 2MB.');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (ev) => {
             updateQuestion(step.id, { gif: ev.target.result });
@@ -345,7 +367,17 @@ function HappyGifStep({ step, updateQuestion }) {
                     <input
                         autoFocus
                         value={step.gif || ''}
-                        onChange={handleUrlChange}
+                        onChange={(e) => {
+                            const url = e.target.value;
+                            const SAFE = ['giphy.com', 'tenor.com', 'imgur.com'];
+                            try {
+                                if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
+                                    alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
+                                    return;
+                                }
+                            } catch { }
+                            handleUrlChange(e);
+                        }}
                         placeholder="Paste GIF / image URL here..."
                         className="w-full text-center text-sm p-3 rounded-xl border-2 border-gray-200 focus:border-pink-500 outline-none"
                     />
@@ -409,6 +441,18 @@ function RankingStep({ step, updateQuestion }) {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        // Security Fix: Validate type and size
+        const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!ALLOWED.includes(file.type)) {
+            alert('Apenas imagens são permitidas.');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Máximo 2MB permitidos.');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (ev) => {
             setCustomImagePreview(ev.target.result);
@@ -442,6 +486,7 @@ function RankingStep({ step, updateQuestion }) {
                     value={step.title}
                     onChange={(e) => updateQuestion(step.id, { title: e.target.value })}
                     rows={2}
+                    maxLength={100}
                     className="w-full text-center text-3xl font-black text-gray-800 bg-transparent outline-none placeholder-gray-300 pb-2 border-b-2 border-gray-100 focus:border-pink-400 resize-none overflow-hidden"
                 />
 
@@ -518,6 +563,7 @@ function RankingStep({ step, updateQuestion }) {
                             value={customName}
                             onChange={(e) => setCustomName(e.target.value)}
                             placeholder="Ex: Tacos 🌮"
+                            maxLength={50}
                             className="w-full text-center text-sm p-4 rounded-2xl border-2 border-gray-100 focus:border-pink-400 outline-none text-gray-700 font-bold shadow-inner bg-gray-50/50"
                             onKeyDown={(e) => e.key === 'Enter' && addCustomOption()}
                         />
@@ -659,6 +705,7 @@ export default function Create() {
                             value={currentStep.title}
                             onChange={(e) => updateQuestion(currentStep.id, { title: e.target.value })}
                             rows={2}
+                            maxLength={100}
                             placeholder="Título da mensagem (ex: Mensagem de preparação...)"
                             className="w-full text-center text-3xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-pink-500 focus:outline-none pb-2 placeholder-gray-300 resize-none overflow-hidden"
                         />
@@ -666,6 +713,7 @@ export default function Create() {
                             value={currentStep.subtitle || ''}
                             onChange={(e) => updateQuestion(currentStep.id, { subtitle: e.target.value })}
                             rows={3}
+                            maxLength={500}
                             className="w-full text-center text-sm font-medium text-gray-400 bg-transparent border-none focus:outline-none resize-none overflow-hidden"
                             placeholder="Escreve um toque pessoal..."
                         />
@@ -707,7 +755,17 @@ export default function Create() {
                                 <span className="text-xs font-bold text-gray-400 uppercase block mb-2">Imagem / GIF (Opcional)</span>
                                 <input
                                     value={''}
-                                    onChange={(e) => updateQuestion(currentStep.id, { gif: e.target.value })}
+                                    onChange={(e) => {
+                                        const url = e.target.value;
+                                        const SAFE = ['giphy.com', 'tenor.com', 'imgur.com', 'media.tenor.com'];
+                                        try {
+                                            if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
+                                                alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
+                                                return;
+                                            }
+                                        } catch { }
+                                        updateQuestion(currentStep.id, { gif: url });
+                                    }}
                                     placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />
@@ -762,7 +820,17 @@ export default function Create() {
                                 <span className="text-xs font-bold text-gray-400 uppercase block mb-2">GIF Debaixo das Estrelas (Opcional)</span>
                                 <input
                                     value={''}
-                                    onChange={(e) => updateQuestion(currentStep.id, { gif: e.target.value })}
+                                    onChange={(e) => {
+                                        const url = e.target.value;
+                                        const SAFE = ['giphy.com', 'tenor.com', 'imgur.com', 'media.tenor.com'];
+                                        try {
+                                            if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
+                                                alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
+                                                return;
+                                            }
+                                        } catch { }
+                                        updateQuestion(currentStep.id, { gif: url });
+                                    }}
                                     placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />

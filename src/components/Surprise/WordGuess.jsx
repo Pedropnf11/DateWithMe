@@ -5,10 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const MAX_ERRORS = 6;
 
+import { supabase } from '../../lib/supabase';
+
 const normalize = (str) =>
   str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
-export default function WordGuess({ location, onDone }) {
+export default function WordGuess({ inviteId, onDone }) {
+  const [location, setLocation] = useState('');
+  const [loading, setLoading] = useState(true);
   const word = normalize(location || 'LOCAL');
   const letters = word.split('');
   const uniqueLetters = [...new Set(letters.filter(l => l !== ' ' && l !== '-'))];
@@ -23,11 +27,20 @@ export default function WordGuess({ location, onDone }) {
   const isLost = wrongGuesses.length >= MAX_ERRORS;
 
   useEffect(() => {
-    if (isWon && !won) {
+    async function fetchLocation() {
+      const { data, error } = await supabase.rpc('reveal_location', { p_invite_id: inviteId });
+      if (!error && data) setLocation(data);
+      setLoading(false);
+    }
+    if (inviteId) fetchLocation();
+  }, [inviteId]);
+
+  useEffect(() => {
+    if (isWon && !won && location) {
       setWon(true);
       setTimeout(() => onDone?.(), 1800);
     }
-  }, [isWon]);
+  }, [isWon, location]);
 
   const guess = (letter) => {
     if (guessed.includes(letter) || isWon || isLost) return;
@@ -107,7 +120,7 @@ export default function WordGuess({ location, onDone }) {
           animate={{ scale: 1, opacity: 1 }}
           className="bg-rose-50 border-2 border-rose-200 rounded-2xl px-6 py-3 text-center"
         >
-          <p className="text-sm font-black text-rose-600 uppercase tracking-widest">Era: {location} 😅</p>
+          <p className="text-sm font-black text-rose-600 uppercase tracking-widest">Era um segredo... 😅</p>
           <p className="text-xs text-rose-400 font-bold">Quase! Mas isto é só o começo...</p>
         </motion.div>
       )}
@@ -128,7 +141,7 @@ export default function WordGuess({ location, onDone }) {
                 className={`w-9 h-9 rounded-xl text-xs font-black transition-all border-2
                   ${isCorrect ? 'bg-green-100 border-green-300 text-green-600' :
                     isWrong ? 'bg-gray-100 border-gray-200 text-gray-300' :
-                    'bg-white border-pink-100 text-gray-700 hover:border-pink-400 hover:bg-pink-50'
+                      'bg-white border-pink-100 text-gray-700 hover:border-pink-400 hover:bg-pink-50'
                   }`}
               >
                 {l}

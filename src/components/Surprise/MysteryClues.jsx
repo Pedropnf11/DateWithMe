@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Unlock } from 'lucide-react';
 
+import { supabase } from '../../lib/supabase';
+
 const MYSTERY_PHRASES = [
   'Será que é cinema... ou jantar? 🤔',
   'Talvez seja algo ao ar livre... ou não? 🌳',
@@ -11,9 +13,20 @@ const MYSTERY_PHRASES = [
   'Mas afinal o que é?! Nunca vais saber até lá chegares 🫣',
 ];
 
-export default function MysteryClues({ clues = [], onDone }) {
+export default function MysteryClues({ inviteId, onDone }) {
+  const [clues, setClues] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState([]);
   const [showMystery, setShowMystery] = useState(false);
+
+  useEffect(() => {
+    async function fetchClues() {
+      const { data, error } = await supabase.rpc('reveal_clues', { p_invite_id: inviteId });
+      if (!error && data) setClues(data);
+      setLoading(false);
+    }
+    if (inviteId) fetchClues();
+  }, [inviteId]);
 
   const revealClue = (idx) => {
     if (revealed.includes(idx)) return;
@@ -91,7 +104,7 @@ export default function MysteryClues({ clues = [], onDone }) {
               Então... já sabes o que vamos fazer?
             </p>
             <p className="text-xs text-gray-400 font-bold italic leading-relaxed">
-              Cinema? Jantar? Passeio? Talvez os três?<br/>
+              Cinema? Jantar? Passeio? Talvez os três?<br />
               Nunca vais saber até lá chegares... e é esse o plano! 😈
             </p>
 

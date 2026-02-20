@@ -30,6 +30,8 @@ export default function SurpriseCreate() {
         removeClue,
         setMessage,
         setHerName,
+        customActivityName,
+        setCustomActivityName,
         saveInvite,
         reset
     } = useSurpriseStore();
@@ -164,10 +166,11 @@ export default function SurpriseCreate() {
 
                                         <input
                                             autoFocus
-                                            value={useSurpriseStore.getState().customActivityName}
-                                            onChange={(e) => useSurpriseStore.getState().setCustomActivityName(e.target.value)}
-                                            placeholder="Ex: Saltos de Paraquedas..."
-                                            className="w-full bg-pink-50 px-8 py-5 rounded-2xl text-sm font-black text-gray-700 border-2 border-transparent focus:border-pink-500 outline-none transition-all uppercase tracking-widest placeholder:text-pink-200"
+                                            value={customActivityName}
+                                            onChange={(e) => setCustomActivityName(e.target.value)}
+                                            placeholder="Ex: Jantar à luz das velas..."
+                                            maxLength={50}
+                                            className="w-full text-center text-sm p-4 rounded-2xl border-2 border-pink-100 focus:border-pink-400 outline-none text-gray-700 font-bold shadow-inner bg-gray-50/50"
                                         />
 
                                         <div className="flex flex-col gap-3">
@@ -176,12 +179,12 @@ export default function SurpriseCreate() {
                                                     toggleActivity({
                                                         id: 'custom',
                                                         emoji: '✨',
-                                                        label: useSurpriseStore.getState().customActivityName || 'Atividade Personalizada',
+                                                        label: customActivityName || 'Atividade Personalizada',
                                                         clues: []
                                                     });
                                                     setShowCustomPopup(false);
                                                 }}
-                                                disabled={!useSurpriseStore.getState().customActivityName.trim()}
+                                                disabled={!customActivityName.trim()}
                                                 className="w-full py-5 bg-pink-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-pink-200"
                                             >
                                                 ADICIONAR ESTA ✨
@@ -305,7 +308,8 @@ export default function SurpriseCreate() {
                                 <input
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
-                                    placeholder="Ex: Cinema"
+                                    placeholder="Ex: Local onde vai ser ex:Porto"
+                                    maxLength={100}
                                     className="w-full bg-white pl-14 pr-6 py-5 rounded-[2rem] text-sm font-black text-gray-700 border-2 border-gray-100 focus:border-pink-500 outline-none shadow-xl transition-all uppercase tracking-widest placeholder:text-gray-200"
                                 />
                             </div>
@@ -347,9 +351,10 @@ export default function SurpriseCreate() {
                                             onChange={(e) => {
                                                 const newClues = [...clues];
                                                 newClues[idx] = e.target.value;
-                                                useSurpriseStore.setState({ clues: newClues });
+                                                setClues(newClues);
                                             }}
                                             placeholder={`Pista ${idx + 1}...`}
+                                            maxLength={100}
                                             className="w-full bg-white pl-10 pr-14 py-5 rounded-2xl text-xs font-bold text-gray-700 border-2 border-gray-50 focus:border-pink-300 outline-none shadow-sm transition-all"
                                         />
                                         <button
@@ -396,6 +401,7 @@ export default function SurpriseCreate() {
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Ex: Mal posso esperar para te ver! 💕"
                                     rows={6}
+                                    maxLength={1000}
                                     className="w-full bg-white px-8 py-8 rounded-[2.5rem] text-sm font-bold text-gray-700 border-2 border-gray-50 focus:border-pink-300 outline-none shadow-xl transition-all resize-none"
                                 />
                                 <p className="text-[9px] text-gray-400 font-black uppercase text-center italic px-4">Esta mensagem será revelada no final da experiência.</p>
@@ -465,7 +471,7 @@ export default function SurpriseCreate() {
                             if (currentStep === 'activity') navigate('/');
                             else if (currentStep === 'details') setStep('activity');
                             else if (currentStep === 'clues') setStep('details');
-                            else setStep('clues');
+                            else if (currentStep === 'message') setStep('clues'); // Fixed navigation
                         }}
                         className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-gray-400 hover:text-pink-500 shadow-sm border border-gray-50 transition-all active:scale-95"
                     >
@@ -495,25 +501,5 @@ export default function SurpriseCreate() {
     );
 }
 
-const scrollbarStyles = `
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #fbcfe8;
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #f472b6;
-  }
-`;
-
-if (typeof document !== 'undefined') {
-    const style = document.createElement('style');
-    style.textContent = scrollbarStyles;
-    document.head.appendChild(style);
-}
-
+// O bloco de document.createElement foi removido por segurança.
+// O CSS correspondente deve ser adicionado ao index.css ou App.css.

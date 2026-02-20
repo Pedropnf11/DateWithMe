@@ -86,13 +86,19 @@ const useSurpriseStore = create((set, get) => ({
       .select()
       .single();
 
-    if (error) return { error: error.message };
+    if (error) {
+      console.error('Supabase Error:', error);
+      return { error: 'Erro ao criar convite surpresa. Tenta novamente.' };
+    }
+
+    // Security Fix: Store key in session storage
+    sessionStorage.setItem(`ck_${data.id}`, data.creator_key);
 
     return {
       success: true,
       id: data.id,
       publicLink: `/surpresa/${data.id}`,
-      privateLink: `/resultado/${data.id}?key=${data.creator_key}`,
+      privateLink: `/resultado/${data.id}`,
     };
   },
 }));

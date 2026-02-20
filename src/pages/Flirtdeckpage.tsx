@@ -45,11 +45,24 @@ export default function FlirtDeckPage() {
           bytes[i] = binary.charCodeAt(i);
         }
         const json = new TextDecoder("utf-8").decode(bytes);
-        setData(JSON.parse(json));
+        const parsed = JSON.parse(json);
+
+        // Security Fix: Validate schema to prevent arbitrary content injection
+        if (!parsed.intro || !parsed.whyMe || !parsed.funFacts || !parsed.redFlags) {
+          throw new Error("Invalid deck schema");
+        }
+
+        setData(parsed);
       } catch (e) {
         try {
           const json = decodeURIComponent(escape(atob(d)));
-          setData(JSON.parse(json));
+          const parsed = JSON.parse(json);
+
+          if (!parsed.intro || !parsed.whyMe || !parsed.funFacts || !parsed.redFlags) {
+            throw new Error("Invalid deck schema");
+          }
+
+          setData(parsed);
         } catch {
           console.error("Failed to parse deck data", e);
           setError(true);

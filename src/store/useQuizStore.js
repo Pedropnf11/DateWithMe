@@ -68,13 +68,19 @@ const useQuizStore = create((set, get) => ({
             .select()
             .single();
 
-        if (error) return { error: error.message };
+        if (error) {
+            console.error('Supabase Error:', error);
+            return { error: 'Ocorreu um erro técnico ao guardar. Tenta novamente.' };
+        }
+
+        // Security Fix: Store key in local storage, not (just) URL
+        localStorage.setItem(`ck_${data.id}`, data.creator_key);
 
         // Retorna os links gerados
         return {
             success: true,
             publicLink: `/convite/${data.id}`,
-            privateLink: `/resultado/${data.id}?key=${data.creator_key}`
+            privateLink: `/resultado/${data.id}`
         };
     }
 }));

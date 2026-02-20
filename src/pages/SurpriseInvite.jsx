@@ -18,15 +18,24 @@ export default function SurpriseInvite() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        async function fetchInvite() {
-            const { data, error } = await supabase
-                .from('invites')
-                .select('*')
-                .eq('id', id)
-                .single();
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-            if (!error && data) {
-                setInvite(data.content);
+        async function fetchInvite() {
+            if (!id || !UUID_REGEX.test(id)) {
+                setLoading(false);
+                setInvite(null);
+                return;
+            }
+
+            const { data, error } = await supabase.rpc('get_safe_invite', { p_invite_id: id });
+
+            if (!error && data && data.length > 0) {
+                const inviteData = data[0];
+                if (inviteData.status === 'expired') {
+                    setInvite(null);
+                } else {
+                    setInvite(inviteData.content);
+                }
             }
             setLoading(false);
         }
@@ -75,9 +84,9 @@ export default function SurpriseInvite() {
             case 0:
                 return <ScratchCalendar dateOptions={invite.dateOptions} onDone={handleDateSelected} />;
             case 1:
-                return <WordGuess location={invite.location} onDone={handleNext} />;
+                return <WordGuess inviteId={id} onDone={handleNext} />;
             case 2:
-                return <MysteryClues clues={invite.clues} onDone={handleNext} />;
+                return <MysteryClues inviteId={id} onDone={handleNext} />;
             case 3:
                 return (
                     <FinalMessage
@@ -115,16 +124,18 @@ export default function SurpriseInvite() {
             </AnimatePresence>
 
             {/* Progress Indicator */}
-            <div className="mt-8 flex gap-1.5 z-10">
-                {[0, 1, 2, 3].map((i) => (
-                    <div
-                        key={i}
-                        className={`h-1 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-pink-500' :
-                            i < step ? 'bg-pink-300' : 'bg-pink-100'
-                            }`}
-                    />
-                ))}
-            </div>
+            {step < 4 && ( // Hide progress indicator on the final step
+                <div className="mt-8 flex gap-1.5 z-10">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div
+                            key={i}
+                            className={`h-1 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-pink-500' :
+                                i < step ? 'bg-pink-300' : 'bg-pink-100'
+                                }`}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
