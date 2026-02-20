@@ -48,9 +48,10 @@ const SLIDE_GRADIENTS = {
 interface FlirtDeckProps {
     data?: DeckData;
     compact?: boolean;
+    inviteId?: string;
 }
 
-export default function FlirtDeck({ data: initialData, compact = false }: FlirtDeckProps) {
+export default function FlirtDeck({ data: initialData, compact = false, inviteId }: FlirtDeckProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [direction, setDirection] = useState(1);
     const [animating, setAnimating] = useState(false);
@@ -201,7 +202,7 @@ export default function FlirtDeck({ data: initialData, compact = false }: FlirtD
                                 {SLIDES[currentSlide] === "why_me" && <WhyMeSlide data={data.whyMe} compact={compact} />}
                                 {SLIDES[currentSlide] === "fun_facts" && <FunFactsSlide data={data.funFacts} compact={compact} />}
                                 {SLIDES[currentSlide] === "red_flags" && <RedFlagsSlide data={data.redFlags} showFlag={showRedFlag} setShowFlag={setShowRedFlag} compact={compact} />}
-                                {SLIDES[currentSlide] === "rate_me" && <RateMeSlide rating={rating} setRating={setRating} hoverRating={hoverRating} setHoverRating={setHoverRating} submitted={submitted} setSubmitted={setSubmitted} compact={compact} />}
+                                {SLIDES[currentSlide] === "rate_me" && <RateMeSlide rating={rating} setRating={setRating} hoverRating={hoverRating} setHoverRating={setHoverRating} submitted={submitted} setSubmitted={setSubmitted} compact={compact} inviteId={inviteId} />}
                             </>
                         )}
                     </div>

@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import FlirtDeck, { DeckData } from "./FlirtDeck";
+import FlirtDeck from "../components/FlirtDeck/FlirtDeck";
+import { DeckData } from "../components/FlirtDeck/types";
 import { supabase } from "../lib/supabase";
 
 export default function FlirtDeckPage() {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<DeckData | undefined>(undefined);
   const [error, setError] = useState(false);
+  const [inviteId, setInviteId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const d = searchParams.get("d");
     const id = window.location.pathname.split("/").pop();
     const isId = id && id !== "flirt-deck" && id !== "flirt-preview";
+    if (isId) setInviteId(id);
 
     async function fetchData() {
       if (isId) {
@@ -93,5 +96,5 @@ export default function FlirtDeckPage() {
     );
   }
 
-  return <FlirtDeck data={data} />;
+  return <FlirtDeck data={data} inviteId={inviteId} />;
 }

@@ -97,7 +97,6 @@ export const TEMPLATE_SPECIAL = {
                 { label: 'Sushi', image: f_sushi },
                 { label: 'Francesinha ', image: f_francesinha },
                 { label: 'Comida Mexicana', image: f_mexican },
-                { label: 'Restaurante Normal', image: a_piquenique },
                 { label: 'Comida Feita por mim', image: f_icook_m },
 
             ]

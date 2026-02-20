@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-
 export default function FinalMessage({ message, herName, onAccept, isSubmitting, selectedDate }) {
   const [accepted, setAccepted] = useState(false);
   const [noClicks, setNoClicks] = useState(0);

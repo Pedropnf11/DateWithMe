@@ -66,8 +66,9 @@ export default function Invite() {
 
         if (isLast) {
             // Quebra-Gelo → mostra SummaryStep antes de submeter
-            // Especial → vai direto para o SuccessView (que tem o resumo em baixo)
+            // Especial → submete agora e vai para success
             if (isSpecial) {
+                submitResponse(true);
                 setPhase('success');
             } else {
                 setPhase('summary');
@@ -88,11 +89,8 @@ export default function Invite() {
             });
         }
 
-        await supabase.from('responses').insert([{
-            invite_id: id,
-            answers: answers,
-        }]);
-
+        // Usar apenas a RPC segura 'submit_response'
+        // A inserção direta na tabela 'responses' foi removida por segurança e para evitar duplicados
         await supabase.rpc('submit_response', {
             invite_uuid: id,
             p_decisao: accepted ? 'sim' : 'nao',

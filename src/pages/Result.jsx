@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, getSupabaseClient } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Loader2, Heart, Calendar, Clock, MapPin, Star, MessageSquare } from 'lucide-react';
 
@@ -17,19 +17,22 @@ export default function Result() {
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
+            const client = getSupabaseClient(key);
+
             // Verify access
-            const { data: inviteData, error: inviteError } = await supabase
+            const { data: inviteData, error: inviteError } = await client
                 .from('invites')
-                .select('*')
+                .select('id, content, status, created_at, creator_key')
                 .eq('id', id)
                 .single();
 
             if (inviteError || !inviteData) {
-                setError('Invite não encontrado.');
+                setError('Invite não encontrado ou acesso restrito.');
                 setLoading(false);
                 return;
             }
 
+            // Client side verification as fallback
             if (inviteData.creator_key !== key) {
                 setError('Acesso negado. Precisas da chave de criador correta.');
                 setLoading(false);
@@ -38,8 +41,8 @@ export default function Result() {
 
             setInvite(inviteData);
 
-            // Fetch responses
-            const { data: respData, error: respError } = await supabase
+            // Fetch responses using the client with the creatorKey header
+            const { data: respData, error: respError } = await client
                 .from('responses')
                 .select('*')
                 .eq('invite_id', id)

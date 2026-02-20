@@ -6,35 +6,8 @@ import useSurpriseStore from '../store/useSurpriseStore';
 import TimePickerOverlay from '../components/Invite/Steps/TimePickerOverlay';
 import { ACTIVITY_PRESETS } from '../data/templateSurprise';
 import { useNavigate } from 'react-router-dom';
-// ─── Helpers ─────────────────────────────────────────────────────
-function buildCalendarDays() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(today);
-    end.setDate(today.getDate() + 30);
-
-    const startOfGrid = new Date(today);
-    const dayOfWeek = (today.getDay() + 6) % 7; // Mon=0
-    startOfGrid.setDate(today.getDate() - dayOfWeek);
-
-    const endOfGrid = new Date(end);
-    const endDayOfWeek = (end.getDay() + 6) % 7;
-    endOfGrid.setDate(end.getDate() + (6 - endDayOfWeek));
-
-    const days = [];
-    const cur = new Date(startOfGrid);
-    while (cur <= endOfGrid) {
-        days.push({
-            date: new Date(cur),
-            inRange: cur >= today && cur <= end,
-        });
-        cur.setDate(cur.getDate() + 1);
-    }
-    return days;
-}
-
-const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
-const MONTH_NAMES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+import { buildCalendarDays, WEEKDAYS, MONTH_NAMES } from '../utils/calendarUtils';
+// Calendar helpers moved to utils/calendarUtils.js
 
 export default function SurpriseCreate() {
     const navigate = useNavigate();
@@ -200,7 +173,12 @@ export default function SurpriseCreate() {
                                         <div className="flex flex-col gap-3">
                                             <button
                                                 onClick={() => {
-                                                    toggleActivity({ id: 'custom', emoji: '✨', label: 'Personalizar', clues: [] });
+                                                    toggleActivity({
+                                                        id: 'custom',
+                                                        emoji: '✨',
+                                                        label: useSurpriseStore.getState().customActivityName || 'Atividade Personalizada',
+                                                        clues: []
+                                                    });
                                                     setShowCustomPopup(false);
                                                 }}
                                                 disabled={!useSurpriseStore.getState().customActivityName.trim()}
@@ -407,7 +385,7 @@ export default function SurpriseCreate() {
                     <div className="space-y-8">
                         <div className="text-center space-y-4">
                             <h1 className="text-4xl font-black text-gray-800 uppercase tracking-tighter italic">PARA QUEM? 💝</h1>
-                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Identifica ela e deixa uma mensagem final.</p>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Deixa uma mensagem final.</p>
                         </div>
 
                         <div className="space-y-6">

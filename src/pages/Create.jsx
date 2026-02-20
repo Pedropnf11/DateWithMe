@@ -9,39 +9,9 @@ import {
     Check, ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { buildCalendarDays, WEEKDAYS, MONTH_NAMES } from '../utils/calendarUtils';
 
-// ─── Calendar helpers ────────────────────────────────────────────
-function buildCalendarDays(referenceDate) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(today);
-    end.setDate(today.getDate() + 30);
-
-    // Find Monday of the week that contains `today`
-    const startOfGrid = new Date(today);
-    const dayOfWeek = (today.getDay() + 6) % 7; // Mon=0
-    startOfGrid.setDate(today.getDate() - dayOfWeek);
-
-    // Find Sunday of the week that contains `end`
-    const endOfGrid = new Date(end);
-    const endDayOfWeek = (end.getDay() + 6) % 7;
-    endOfGrid.setDate(end.getDate() + (6 - endDayOfWeek));
-
-    const days = [];
-    const cur = new Date(startOfGrid);
-    while (cur <= endOfGrid) {
-        days.push({
-            date: new Date(cur),
-            inRange: cur >= today && cur <= end,
-            isToday: cur.getTime() === today.getTime(),
-        });
-        cur.setDate(cur.getDate() + 1);
-    }
-    return days;
-}
-
-const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
-const MONTH_NAMES = ['JAN', 'FEV', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+// Calendar helpers previously here are now in utils/calendarUtils.js
 
 // ─── Calendar Step Component ─────────────────────────────────────
 function CalendarStep({ step, updateQuestion }) {
@@ -498,37 +468,37 @@ function RankingStep({ step, updateQuestion }) {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => toggleOption(idx)}
-                                className={`relative cursor-pointer rounded-3xl overflow-hidden transition-all group border-4
-                                    ${excluded ? 'border-gray-100 opacity-40 grayscale' : 'border-pink-200 shadow-lg shadow-pink-100/50'}
-                                `}
+                                className="flex flex-col items-center gap-2 group cursor-pointer"
                             >
-                                {/* Image */}
-                                <div className="aspect-square bg-gray-50">
+                                {/* Image Container */}
+                                <div className={`relative aspect-square w-full rounded-[2rem] overflow-hidden transition-all
+                                    ${excluded ? 'opacity-40 grayscale border-2 border-dashed border-gray-200' : 'shadow-xl shadow-pink-100/20 border-2 border-white'}
+                                `}>
                                     {image
-                                        ? <img src={image} className="w-full h-full object-cover" alt={label} />
+                                        ? <img src={image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={label} />
                                         : <div className="w-full h-full flex items-center justify-center text-4xl bg-pink-50/50">{label.match(/\p{Emoji}/u)?.[0] || '🍽️'}</div>
                                     }
+
+                                    {/* Remove button */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); removeOption(idx); }}
+                                        className="absolute top-2 left-2 w-7 h-7 bg-rose-500/90 backdrop-blur-sm rounded-full items-center justify-center shadow-lg border-2 border-white hidden group-hover:flex transition-all hover:scale-110 z-20"
+                                    >
+                                        <X size={14} className="text-white" strokeWidth={4} />
+                                    </button>
+
+                                    {/* Checkmark overlay */}
+                                    {!excluded && (
+                                        <div className="absolute top-2 right-2 w-7 h-7 bg-pink-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-20">
+                                            <Check size={14} className="text-white" strokeWidth={4} />
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Label */}
-                                <div className="bg-white/90 backdrop-blur-sm absolute bottom-0 left-0 w-full py-0.1 px-0.1 text-center">
-                                    <span className="text-[10px] font-bold text-gray-800 truncate block uppercase tracking-tighter">{label}</span>
-                                </div>
-
-                                {/* Checkmark overlay */}
-                                {!excluded && (
-                                    <div className="absolute top-2 right-2 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                                        <Check size={12} className="text-white" strokeWidth={4} />
-                                    </div>
-                                )}
-
-                                {/* Remove button */}
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); removeOption(idx); }}
-                                    className="absolute top-2 left-2 w-6 h-6 bg-rose-500 rounded-full items-center justify-center shadow-lg border-2 border-white hidden group-hover:flex transition-all hover:scale-110"
-                                >
-                                    <X size={12} className="text-white" strokeWidth={4} />
-                                </button>
+                                {/* Label below image */}
+                                <p className={`text-[10px] font-black uppercase tracking-tighter transition-colors ${excluded ? 'text-gray-300' : 'text-gray-800'}`}>
+                                    {label}
+                                </p>
                             </motion.div>
                         );
                     })}
@@ -928,7 +898,7 @@ export default function Create() {
                         <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl space-y-6">
 
                             <h2 className="text-3xl font-black text-gray-800 uppercase tracking-tight leading-tight">Tudo pronto! 💖</h2>
-                            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest leading-relaxed">Guarda os teus links para não perderes as respostas!</p>
+                            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest leading-relaxed">Guarda o teu link!</p>
 
                             {/* Link for the girl */}
                             <div className="bg-pink-50 p-4 rounded-xl border border-pink-200 text-left space-y-2">

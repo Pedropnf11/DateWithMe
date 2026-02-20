@@ -58,6 +58,7 @@ const useQuizStore = create((set, get) => ({
                 {
                     // O "content" é a tal coluna mágica JSONB
                     content: {
+                        templateId: quizData.templateId,
                         title: quizData.title,
                         steps: quizData.questions
                     },

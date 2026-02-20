@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import iconPromess from "../../../assets/emote/icon_promess.png";
+import { supabase } from "../../../lib/supabase";
 
 interface RateMeSlidProps {
     rating: number | null;
@@ -11,6 +12,7 @@ interface RateMeSlidProps {
     submitted: boolean;
     setSubmitted: (submitted: boolean) => void;
     compact?: boolean;
+    inviteId?: string;
 }
 
 const CUTE_MESSAGES = {
@@ -38,6 +40,7 @@ export default function RateMeSlide({
     submitted,
     setSubmitted,
     compact = false,
+    inviteId,
 }: RateMeSlidProps) {
     const [attempts, setAttempts] = useState(0);
     const [showPopup, setShowPopup] = useState(false);
@@ -82,7 +85,7 @@ export default function RateMeSlide({
     // ═════════════════════════════════════════════════════════════
     // HANDLE SUBMIT — 2 tentativas para ratings baixos
     // ═════════════════════════════════════════════════════════════
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (rating === null || rating === 0) return;
 
         const newAttempts = attempts + 1;
@@ -104,6 +107,19 @@ export default function RateMeSlide({
         }
 
         // 3ª tentativa ou rating > 3 — submete
+        try {
+            if (inviteId) {
+                await supabase.rpc('submit_response', {
+                    invite_uuid: inviteId,
+                    p_decisao: 'rating',
+                    p_answers: { rating },
+                    p_mensagem: `Avaliação: ${rating}/10 ✨`,
+                });
+            }
+        } catch (error) {
+            console.error("Error submitting rating:", error);
+        }
+
         setSubmitted(true);
 
         confetti({

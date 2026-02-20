@@ -376,7 +376,7 @@ export default function Home() {
                     />
                     <FAQItem
                         question="Quanto tempo duram os links?"
-                        answer="Por questões de segurança e privacidade, os links e as respostas expiram automaticamente após 24 horas. É uma experiência efémera, focada no momento."
+                        answer="Por questões de segurança e privacidade, os links e as respostas expiram automaticamente após 24 horas.  É uma experiência efémera, focada no momento."
                     />
                     <FAQItem
                         question="Ela precisa de instalar alguma app?"
