@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TEMPLATES } from '../data/templates';
 import useQuizStore from '../store/useQuizStore';
 import { useNavigate } from 'react-router-dom';
-import { Star, Heart, Calendar, Play, X, ChevronRight, Trash2, Plus, Copy, Check, Smartphone, Tablet } from 'lucide-react';
+import { Star, Heart, Calendar, Play, X, ChevronRight, Trash2, Plus, Copy, Check, Smartphone, Tablet, User, Info, AlertCircle, Quote } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 import heroCouple1 from '../assets/hero-couple.png';
@@ -14,16 +14,16 @@ import FlirtDeck from './FlirtDeck';
 
 // ── Dados default do deck ────────────────────────────────────────
 const DEFAULT_DECK = {
-    intro: { name: 'Teu Nome', tagline: 'Não é um date qualquer. 😏', photo: null, gif: null },
+    intro: { name: 'Teu Nome', initials: 'TN', tagline: 'Não é um date qualquer. 😏', photo: null, gif: null },
     whyMe: [
-        { emoji: '🎯', title: 'Eu planeio tudo', desc: 'Reservas feitas. Playlist pronta.' },
-        { emoji: '🌙', title: 'Melhor ao vivo', desc: 'Este deck já é bom, imagina eu.' },
-        { emoji: '🤝', title: 'Sem jogos', desc: 'O que vês é o que tens.' },
+        { title: 'Eu planeio tudo' },
+        { title: 'Melhor ao vivo' },
+        { title: 'Sem jogos' },
     ],
     funFacts: [
-        'Consigo fazer panquecas às 2 da manhã 🥞',
-        'Sei as letras todas desta música 🎵',
-        'Nunca mexo no telemóvel durante os filmes 📵',
+        'Consigo fazer panquecas às 2 da manhã ',
+        'Sei as letras todas desta música ',
+        'Nunca mexo no telemóvel durante os filmes ',
     ],
     redFlags: [
         { flag: 'Explico as coisas demais', severity: 1 },
@@ -35,8 +35,8 @@ const DEFAULT_DECK = {
 // ── Helpers de estilo do editor ──────────────────────────────────
 const iStyle = {
     width: '100%',
-    padding: '7px 11px',
-    borderRadius: 9,
+    padding: '10px 14px',
+    borderRadius: 14,
     border: '1px solid #fecdd3',
     fontSize: 13,
     fontFamily: 'inherit',
@@ -44,30 +44,57 @@ const iStyle = {
     background: '#fff',
     color: '#1a0a10',
     boxSizing: 'border-box',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
-function EInput({ value, onChange, placeholder, style }) {
+function EInput({ value, onChange, placeholder, style, ...props }) {
+    const [isFocused, setIsFocused] = useState(false);
     return (
         <input
+            {...props}
             value={value}
             onChange={onChange}
             placeholder={placeholder}
-            style={{ ...iStyle, ...style }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            style={{
+                ...iStyle,
+                borderColor: isFocused ? '#f43f5e' : '#fecdd3',
+                boxShadow: isFocused ? '0 0 0 4px rgba(244, 63, 94, 0.08)' : 'none',
+                transform: isFocused ? 'translateY(-1px)' : 'none',
+                ...style
+            }}
         />
     );
 }
 
-function ESection({ title, children }) {
+function ESection({ title, children, icon: Icon }) {
     return (
-        <div style={{ marginBottom: 20 }}>
-            <p style={{
-                fontSize: 10, fontWeight: 800, color: '#f43f5e',
-                letterSpacing: '0.1em', textTransform: 'uppercase',
-                marginBottom: 8, paddingBottom: 5,
-                borderBottom: '1px solid #fecdd3',
+        <div style={{
+            marginBottom: 24,
+            background: 'rgba(255, 255, 255, 0.5)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 24,
+            padding: '20px',
+            border: '1px solid rgba(254, 205, 211, 0.5)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.02)'
+        }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 16,
+                paddingBottom: 10,
+                borderBottom: '1px solid rgba(254, 205, 211, 0.3)',
             }}>
-                {title}
-            </p>
+                {Icon && <Icon size={14} className="text-pink-500" />}
+                <p style={{
+                    fontSize: 10, fontWeight: 900, color: '#f43f5e',
+                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                }}>
+                    {title}
+                </p>
+            </div>
             {children}
         </div>
     );
@@ -96,7 +123,14 @@ export default function Home() {
     const navigate = useNavigate();
 
     const closeModal = () => { setIsModalOpen(false); setModalStep(1); };
-    const handleSelectMode = (modeId) => { setTemplate(modeId); navigate('/criar'); };
+    const handleSelectMode = (modeId) => {
+        if (modeId === 'surprise') {
+            navigate('/criar-surpresa');
+        } else {
+            setTemplate(modeId);
+            navigate('/criar');
+        }
+    };
 
     // ── Funções de update do deck ────────────────────────────────
     const updIntro = (field, val) =>
@@ -139,7 +173,6 @@ export default function Home() {
     const removeFlag = (idx) =>
         setDeckData(d => ({ ...d, redFlags: d.redFlags.filter((_, i) => i !== idx) }));
 
-    // ── Gerar + copiar link ──────────────────────────────────────
     // ── Gerar + copiar link (Supabase) ──────────────────────────
     const handleGenerateLink = async () => {
         setIsSaving(true);
@@ -158,6 +191,13 @@ export default function Home() {
 
             if (error) throw error;
 
+            const url = `${window.location.origin}/flirt-deck/${data.id}`;
+            setGeneratedLink(url);
+            window.open(url, '_blank');
+
+        } catch (err) {
+            console.error('Error generating link:', err);
+            alert('Erro ao gerar link. Tenta novamente.');
         } finally {
             setIsSaving(false);
         }
@@ -337,12 +377,12 @@ export default function Home() {
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
                                         <h2 className="text-3xl font-black text-gray-800 uppercase tracking-tight">
-                                            {modalStep === 1 && "Qual é o plano? ✨"}
-                                            {modalStep === 2 && "Escolhe a tua Vibe 💖"}
-                                            {modalStep === 3 && "Editor FlirtDeck™ 🎴"}
+                                            {modalStep === 1 && "Qual é o plano?"}
+                                            {modalStep === 2 && "Escolhe a tua Vibe"}
+                                            {modalStep === 3 && "Editor FlirtDeck"}
                                         </h2>
                                         <p className="text-gray-400 font-bold text-[10px] mt-1 uppercase tracking-widest">
-                                            {modalStep === 1 && 'Começa por convidar alguém especial.'}
+                                            {modalStep === 1 && 'Escolhe uma opção e nós criamos a magia.'}
                                             {modalStep === 2 && 'Seleciona um template para personalizar.'}
                                             {modalStep === 3 && 'Personaliza cada slide e partilha o teu deck.'}
                                         </p>
@@ -384,7 +424,7 @@ export default function Home() {
                                             </motion.button>
 
                                             {/* Divider */}
-                                            <div className="flex flex-col items-center gap-2 text-gray-300 font-black text-xs uppercase tracking-widest">
+                                            <div className="flex flex-col items-center gap-2 font-black text-base text-gray-400 uppercase tracking-widest">
                                                 <div className="w-px h-10 bg-gray-200 hidden md:block" />
                                                 <span>ou</span>
                                                 <div className="w-px h-10 bg-gray-200 hidden md:block" />
@@ -395,22 +435,24 @@ export default function Home() {
                                                 whileHover={{ y: -4, scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => setModalStep(3)}
-                                                className="flex-1 max-w-xs h-56 bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700 rounded-3xl flex flex-col items-center justify-center gap-4 hover:border-pink-500 hover:shadow-xl hover:shadow-pink-500/20 transition-all"
+                                                className="flex-1 max-w-xs h-56 bg-gradient-to-br from-pink-50 to-purple-50 border-2 border-purple-200 rounded-3xl flex flex-col items-center justify-center gap-4 hover:border-purple-500 hover:shadow-xl hover:shadow-purple-200/60 transition-all"
                                             >
-                                                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-pink-500/30 text-2xl">
+                                                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 text-2xl">
                                                     🎴
                                                 </div>
                                                 <div className="text-center px-4">
-                                                    <p className="font-black text-white text-lg leading-tight uppercase tracking-tight">FlirtDeck™</p>
-                                                    <p className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">Apresentação pessoal para a impressionar</p>
+                                                    <p className="font-black text-gray-800 text-lg leading-tight uppercase tracking-tight">FlirtDeck</p>
+                                                    <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-widest">Apresenta-te de forma que ela não esquece</p>
                                                 </div>
                                             </motion.button>
                                         </div>
 
                                         <p className="mt-8 text-center text-gray-400 text-[9px] font-black uppercase tracking-[0.2em]">
-                                            Escolhe como queres dar o próximo passo 💕
+                                            Escolhe como queres dar o próximo passo
                                         </p>
+
                                     </div>
+
                                 )}
 
                                 {/* ── STEP 2: Templates ── */}
@@ -418,7 +460,7 @@ export default function Home() {
                                     <motion.div
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
                                     >
                                         {Object.values(TEMPLATES).map((template) => (
                                             <button
@@ -426,12 +468,10 @@ export default function Home() {
                                                 onClick={() => handleSelectMode(template.id)}
                                                 className="group flex flex-col items-start p-6 rounded-3xl border-2 border-transparent hover:border-pink-500 bg-gray-50 hover:bg-pink-50 transition-all duration-300 text-left"
                                             >
-                                                <div className="bg-white p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform shadow-sm text-2xl">
-                                                    {template.label?.includes('First') ? '🌸' : template.label?.includes('Special') ? '✨' : '🎲'}
-                                                </div>
+
                                                 <h3 className="font-black text-gray-900 text-lg mb-1 uppercase tracking-tight">{template.label}</h3>
-                                                <p className="text-[10px] text-gray-500 mb-4 leading-relaxed font-bold uppercase tracking-widest">
-                                                    {template.description || 'Perfeito para criar um momento especial.'}
+                                                <p className="text-[11px] text-gray-500 mb-4 leading-relaxed font-medium">
+                                                    {template.description}
                                                 </p>
                                                 <div className="mt-auto w-full border-t border-gray-200 pt-3 flex justify-between items-center group-hover:border-pink-200">
                                                     <span className="text-[10px] font-black text-gray-400 group-hover:text-pink-600 uppercase tracking-widest transition-colors">Selecionar</span>
@@ -448,105 +488,161 @@ export default function Home() {
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         className="flex flex-col md:flex-row gap-5 h-[68vh] min-h-[500px]"
+                                    > <button
+                                        onClick={() => setIsMobilePreviewOpen(true)}
+                                        className="md:hidden w-full p-[10px] rounded-xl bg-pink-50 border border-pink-100 text-pink-500 text-xs font-bold flex items-center justify-center gap-2"
                                     >
-                                        {/* ─── LEFT: Editor ─────────────────────────────── */}
-                                        <div className="w-full md:w-[42%] flex-shrink-0 overflow-y-auto pr-4 pb-4 flex flex-col">
+                                            <Smartphone size={16} /> Ver Preview
+                                        </button>
+                                        {/* ─── LEFT: Editor (40%) ─────────────────────────── */}
+                                        <div className="w-full md:w-[40%] flex-shrink-0 overflow-y-auto pr-4 pb-4 flex flex-col">
 
                                             {/* Intro */}
-                                            <ESection title="Introdução">
-                                                <div style={{ marginBottom: 8 }}>
-                                                    <label style={{ fontSize: 9, color: '#9ca3af', fontWeight: 900, display: 'block', marginBottom: 4, letterSpacing: '0.1em' }}>NOME</label>
-                                                    <EInput
-                                                        value={deckData.intro.name}
-                                                        onChange={e => updIntro('name', e.target.value)}
-                                                        placeholder="O teu nome"
-                                                    />
+                                            <ESection title="Introdução" icon={User}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                                                    <div>
+                                                        <label style={{ fontSize: 9, color: '#9ca3af', fontWeight: 900, display: 'block', marginBottom: 4, letterSpacing: '0.1em' }}>NOME</label>
+                                                        <EInput
+                                                            value={deckData.intro.name}
+                                                            onChange={e => updIntro('name', e.target.value)}
+                                                            placeholder="O teu nome"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ fontSize: 9, color: '#9ca3af', fontWeight: 900, display: 'block', marginBottom: 4, letterSpacing: '0.1em' }}>INICIAIS</label>
+                                                        <EInput
+                                                            value={deckData.intro.initials}
+                                                            onChange={e => updIntro('initials', e.target.value.toUpperCase())}
+                                                            placeholder="P.Ex: JS"
+                                                            maxLength={3}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <label style={{ fontSize: 9, color: '#9ca3af', fontWeight: 900, display: 'block', marginBottom: 4, letterSpacing: '0.1em' }}>TAGLINE</label>
                                                     <EInput
                                                         value={deckData.intro.tagline}
                                                         onChange={e => updIntro('tagline', e.target.value)}
-                                                        placeholder="Não é um date qualquer. 😏"
+                                                        placeholder="Uma frase marcante..."
                                                     />
                                                 </div>
                                             </ESection>
 
                                             {/* Why Me */}
-                                            <ESection title="Porquê eu?">
+                                            <ESection title="Porquê eu?" icon={Star}>
                                                 {deckData.whyMe.map((w, idx) => (
                                                     <div key={idx} style={{
-                                                        background: '#fff', borderRadius: 16,
-                                                        padding: '12px', marginBottom: 8,
+                                                        background: 'rgba(255, 255, 255, 0.8)',
+                                                        borderRadius: 18,
+                                                        padding: '16px',
+                                                        marginBottom: 12,
                                                         border: '1px solid #fecdd3',
-                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                        boxShadow: '0 4px 12px rgba(244, 63, 94, 0.03)',
+                                                        position: 'relative'
                                                     }}>
-                                                        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                                                            <EInput
-                                                                value={w.emoji}
-                                                                onChange={e => updWhyMe(idx, 'emoji', e.target.value)}
-                                                                style={{ width: 44, textAlign: 'center', padding: '7px 4px' }}
-                                                                placeholder="🎯"
-                                                            />
+                                                        {deckData.whyMe.length > 1 && (
+                                                            <button
+                                                                onClick={() => removeWhyMe(idx)}
+                                                                style={{
+                                                                    position: 'absolute', top: -8, right: -8,
+                                                                    background: '#fff', border: '1px solid #fecdd3',
+                                                                    borderRadius: '50%', cursor: 'pointer', color: '#fca5a5',
+                                                                    width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => e.currentTarget.style.color = '#f43f5e'}
+                                                                onMouseOut={e => e.currentTarget.style.color = '#fca5a5'}
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        )}
+                                                        <div style={{ marginBottom: 10 }}>
                                                             <EInput
                                                                 value={w.title}
                                                                 onChange={e => updWhyMe(idx, 'title', e.target.value)}
-                                                                placeholder="Título"
-                                                                style={{ flex: 1 }}
+                                                                placeholder="Título (Ex: Sei cozinhar)"
+                                                                style={{ fontWeight: 600 }}
                                                             />
                                                         </div>
-                                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                                            <EInput
-                                                                value={w.desc}
-                                                                onChange={e => updWhyMe(idx, 'desc', e.target.value)}
-                                                                placeholder="Breve descrição..."
-                                                                style={{ flex: 1 }}
-                                                            />
-                                                            {deckData.whyMe.length > 1 && (
-                                                                <button onClick={() => removeWhyMe(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fca5a5', padding: '4px', display: 'flex', alignItems: 'center' }}>
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            )}
-                                                        </div>
+                                                        <EInput
+                                                            value={w.desc}
+                                                            onChange={e => updWhyMe(idx, 'desc', e.target.value)}
+                                                            placeholder="Detalhe (Opcional)"
+                                                            style={{ fontSize: 12, background: 'rgba(255,245,247,0.5)' }}
+                                                        />
                                                     </div>
                                                 ))}
                                                 <button
                                                     onClick={addWhyMe}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px dashed #fca5a5', borderRadius: 12, padding: '10px 12px', color: '#f43f5e', fontSize: 10, fontWeight: 900, cursor: 'pointer', width: '100%', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: 'rgba(255, 255, 255, 0.5)',
+                                                        border: '2px dashed #fecdd3', borderRadius: 18,
+                                                        padding: '14px', color: '#f43f5e', fontSize: 11,
+                                                        fontWeight: 900, cursor: 'pointer', width: '100%',
+                                                        marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#f43f5e'; }}
+                                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)'; e.currentTarget.style.borderColor = '#fecdd3'; }}
                                                 >
-                                                    <Plus size={13} /> Adicionar motivo
+                                                    <Plus size={14} /> Adicionar motivo
                                                 </button>
                                             </ESection>
 
                                             {/* Fun Facts */}
-                                            <ESection title="Factos Curiosos">
+                                            <ESection title="Factos Curiosos" icon={Info}>
                                                 {deckData.funFacts.map((f, idx) => (
-                                                    <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                                                        <EInput
-                                                            value={f}
-                                                            onChange={e => updFact(idx, e.target.value)}
-                                                            placeholder="Facto curioso..."
-                                                            style={{ flex: 1 }}
-                                                        />
+                                                    <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'center' }}>
+                                                        <div style={{ flex: 1, position: 'relative' }}>
+                                                            <EInput
+                                                                value={f}
+                                                                onChange={e => updFact(idx, e.target.value)}
+                                                                placeholder="Facto curioso..."
+                                                                style={{ paddingLeft: 36 }}
+                                                            />
+                                                            <Quote size={12} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#fecdd3' }} />
+                                                        </div>
                                                         {deckData.funFacts.length > 1 && (
-                                                            <button onClick={() => removeFact(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fca5a5', padding: '4px', display: 'flex', alignItems: 'center' }}>
-                                                                <Trash2 size={14} />
+                                                            <button
+                                                                onClick={() => removeFact(idx)}
+                                                                style={{
+                                                                    flexShrink: 0, width: 32, height: 32, borderRadius: 10,
+                                                                    background: '#fff', border: '1px solid #fecdd3',
+                                                                    cursor: 'pointer', color: '#fca5a5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.color = '#f43f5e'; e.currentTarget.style.borderColor = '#f43f5e'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.color = '#fca5a5'; e.currentTarget.style.borderColor = '#fecdd3'; }}
+                                                            >
+                                                                <Trash2 size={13} />
                                                             </button>
                                                         )}
                                                     </div>
                                                 ))}
                                                 <button
                                                     onClick={addFact}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px dashed #fca5a5', borderRadius: 12, padding: '10px 12px', color: '#f43f5e', fontSize: 10, fontWeight: 900, cursor: 'pointer', width: '100%', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: 'rgba(255, 255, 255, 0.5)',
+                                                        border: '2px dashed #fecdd3', borderRadius: 18,
+                                                        padding: '14px', color: '#f43f5e', fontSize: 11,
+                                                        fontWeight: 900, cursor: 'pointer', width: '100%',
+                                                        marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#f43f5e'; }}
+                                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)'; e.currentTarget.style.borderColor = '#fecdd3'; }}
                                                 >
-                                                    <Plus size={13} /> Adicionar facto
+                                                    <Plus size={14} /> Adicionar facto
                                                 </button>
                                             </ESection>
 
                                             {/* Red Flags */}
-                                            <ESection title="Red Flags">
+                                            <ESection title="Red Flags" icon={AlertCircle}>
                                                 {deckData.redFlags.map((r, idx) => (
-                                                    <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                                                    <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'center' }}>
                                                         <EInput
                                                             value={r.flag}
                                                             onChange={e => updFlag(idx, 'flag', e.target.value)}
@@ -556,28 +652,51 @@ export default function Home() {
                                                         <select
                                                             value={r.severity}
                                                             onChange={e => updFlag(idx, 'severity', Number(e.target.value))}
-                                                            style={{ ...iStyle, width: 54, padding: '7px 4px' }}
+                                                            style={{
+                                                                ...iStyle, width: 64, padding: '10px 6px', textAlign: 'center',
+                                                                background: '#fff5f7'
+                                                            }}
                                                         >
-                                                            <option value={1}>🟡</option>
+                                                            <option value={1}>�</option>
                                                             <option value={2}>🟠</option>
                                                             <option value={3}>🔴</option>
                                                         </select>
                                                         {deckData.redFlags.length > 1 && (
-                                                            <button onClick={() => removeFlag(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fca5a5', padding: '4px', display: 'flex', alignItems: 'center' }}>
-                                                                <Trash2 size={14} />
+                                                            <button
+                                                                onClick={() => removeFlag(idx)}
+                                                                style={{
+                                                                    flexShrink: 0, width: 32, height: 32, borderRadius: 10,
+                                                                    background: '#fff', border: '1px solid #fecdd3',
+                                                                    cursor: 'pointer', color: '#fca5a5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.color = '#f43f5e'; e.currentTarget.style.borderColor = '#f43f5e'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.color = '#fca5a5'; e.currentTarget.style.borderColor = '#fecdd3'; }}
+                                                            >
+                                                                <Trash2 size={13} />
                                                             </button>
                                                         )}
                                                     </div>
                                                 ))}
                                                 <button
                                                     onClick={addFlag}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px dashed #fca5a5', borderRadius: 12, padding: '10px 12px', color: '#f43f5e', fontSize: 10, fontWeight: 900, cursor: 'pointer', width: '100%', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: 'rgba(255, 255, 255, 0.5)',
+                                                        border: '2px dashed #fecdd3', borderRadius: 18,
+                                                        padding: '14px', color: '#f43f5e', fontSize: 11,
+                                                        fontWeight: 900, cursor: 'pointer', width: '100%',
+                                                        marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#f43f5e'; }}
+                                                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)'; e.currentTarget.style.borderColor = '#fecdd3'; }}
                                                 >
-                                                    <Plus size={13} /> Adicionar red flag
+                                                    <Plus size={14} /> Adicionar red flag
                                                 </button>
                                             </ESection>
 
-                                            {/* ─── GERAR LINK & PREVIEW ──────────────────────────── */}
+                                            {/* ─── GERAR LINK ────────────────────────────────── */}
                                             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                 <button
                                                     onClick={handleGenerateLink}
@@ -600,14 +719,9 @@ export default function Home() {
                                                     {isSaving ? "A CRIAR..." : <>🔗 GERAR & ABRIR LINK</>}
                                                 </button>
 
-                                                <button
-                                                    onClick={() => setIsMobilePreviewOpen(true)}
-                                                    className="md:hidden w-full p-[10px] rounded-xl bg-pink-50 border border-pink-100 text-pink-500 text-xs font-bold flex items-center justify-center gap-2"
-                                                >
-                                                    <Smartphone size={16} /> Open Preview
-                                                </button>
 
-                                                {/* Link gerado — mostrar após click */}
+
+                                                {/* Link gerado */}
                                                 <AnimatePresence>
                                                     {generatedLink && (
                                                         <motion.div
@@ -623,7 +737,7 @@ export default function Home() {
                                                             }}
                                                         >
                                                             <p style={{ fontSize: 10, fontWeight: 700, color: '#f43f5e', marginBottom: 6, letterSpacing: '0.06em' }}>
-                                                                LINK GERADO — PARTILHA COM O TEU CRUSH 💌
+                                                                LINK GERADO — PARTILHA COM O TEU CRUSH
                                                             </p>
                                                             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                                                 <input
@@ -660,11 +774,11 @@ export default function Home() {
                                             </div>
                                         </div>
 
-                                        {/* ─── RIGHT: Preview live (DESKTOP ONLY) ─── */}
+                                        {/* ─── RIGHT: Preview live 60% (DESKTOP ONLY) ─── */}
                                         <div className="hidden md:flex flex-1 bg-[#08080c] rounded-3xl overflow-hidden relative items-center justify-center">
                                             <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', zIndex: 10 }}>
                                                 <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.15em', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                    PREVIEW LIVE
+                                                    PREVIEW AO VIVO
                                                 </span>
                                             </div>
                                             <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>

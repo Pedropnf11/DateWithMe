@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, ChevronRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-// Modular Components
 import { resolveActiveSteps } from '../components/Invite/utils';
 import SuccessView from '../components/Invite/SuccessView';
+import SummaryStep from '../components/Invite/Steps/SummaryStep';
 import QuestionStep from '../components/Invite/Steps/QuestionStep';
 import RankingStep from '../components/Invite/Steps/RankingStep';
 import CalendarStep from '../components/Invite/Steps/CalendarStep';
@@ -17,13 +17,18 @@ import TextInputStep from '../components/Invite/Steps/TextInputStep';
 
 export default function Invite() {
     const { id } = useParams();
-    const [invite, setInvite] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [answers, setAnswers] = useState({});
+    const navigate = useNavigate();
+    const [invite, setInvite]           = useState(null);
+    const [loading, setLoading]         = useState(true);
+    const [answers, setAnswers]         = useState({});
     const [activeSteps, setActiveSteps] = useState([]);
     const [currentStep, setCurrentStep] = useState(0);
-    const [showResult, setShowResult] = useState(false);
+    // 'quiz' | 'summary' | 'success'
+    const [phase, setPhase]             = useState('quiz');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const templateId = invite?.content?.templateId ?? '';
+    const isSpecial  = templateId === 'special';
 
     useEffect(() => {
         async function fetchInvite() {
@@ -33,6 +38,11 @@ export default function Invite() {
                 .eq('id', id)
                 .single();
             if (!error && data) {
+                // Redirecionar surpresas para a rota correta
+                if (data.content?.templateId === 'surprise') {
+                    navigate(`/surpresa/${data.id}`, { replace: true });
+                    return;
+                }
                 setInvite(data);
                 const initial = resolveActiveSteps(data.content.steps, {});
                 setActiveSteps(initial);
@@ -46,15 +56,21 @@ export default function Invite() {
         const newAnswers = { ...answers, [questionId]: answer };
         setAnswers(newAnswers);
 
-        const allSteps = invite.content.steps;
-        const newActive = resolveActiveSteps(allSteps, newAnswers);
+        const allSteps   = invite.content.steps;
+        const newActive  = resolveActiveSteps(allSteps, newAnswers);
         setActiveSteps(newActive);
 
         const nonSummarySteps = newActive.filter(s => s.type !== 'summary');
         const isLast = currentStep >= nonSummarySteps.length - 1;
 
         if (isLast) {
-            setShowResult(true);
+            // Quebra-Gelo → mostra SummaryStep antes de submeter
+            // Especial → vai direto para o SuccessView (que tem o resumo em baixo)
+            if (isSpecial) {
+                setPhase('success');
+            } else {
+                setPhase('summary');
+            }
         } else {
             setCurrentStep(prev => prev + 1);
         }
@@ -63,37 +79,34 @@ export default function Invite() {
     const submitResponse = async (accepted) => {
         setIsSubmitting(true);
         if (accepted) {
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#FF69B4', '#FFD700', '#FF1493'] });
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FF69B4', '#FFD700', '#FF1493'],
+            });
         }
 
-        // Tenta gravar a resposta na tabela responses
-        const { error: insertError } = await supabase
-            .from('responses')
-            .insert([
-                {
-                    invite_id: id,
-                    answers: answers,
-                }
-            ]);
+        await supabase.from('responses').insert([{
+            invite_id: id,
+            answers: answers,
+        }]);
 
-        // Também tenta chamar o RPC (se existir) para atualizar o status do invite
         await supabase.rpc('submit_response', {
             invite_uuid: id,
-            p_decisao: accepted ? 'sim' : 'nao',
-            p_answers: answers,
-            p_mensagem: null,
+            p_decisao:   accepted ? 'sim' : 'nao',
+            p_answers:   answers,
+            p_mensagem:  null,
         });
 
-        if (insertError) {
-            console.error('Erro ao gravar resposta:', insertError);
-            alert('Encontramos um problema ao guardar a tua resposta. Por favor tenta novamente!');
-        } else {
-            // Sucesso
-            // Opcional: navegar para uma página de "Obrigado" ou mostrar mensagem final
-        }
         setIsSubmitting(false);
+        // Após confirmar, mostrar SuccessView (só para quebra-gelo que ficou no summary)
+        if (phase === 'summary') {
+            setPhase('success');
+        }
     };
 
+    // ── Loading ──────────────────────────────────────────────────
     if (loading) return (
         <div className="min-h-screen bg-pink-50 flex items-center justify-center">
             <Loader2 className="animate-spin text-pink-500" size={48} />
@@ -104,18 +117,44 @@ export default function Invite() {
         <div className="min-h-screen bg-pink-50 flex items-center justify-center text-center p-4">
             <div>
                 <h1 className="text-4xl mb-4">💔</h1>
-                <p className="text-gray-600 text-xl font-black uppercase tracking-tight">Este convite não existe ou já expirou.</p>
+                <p className="text-gray-600 text-xl font-black uppercase tracking-tight">
+                    Este convite não existe ou já expirou.
+                </p>
             </div>
         </div>
     );
 
-    if (showResult) {
-        const calendarStep = invite.content.steps.find(s => s.type === 'calendar');
-        const creatorNote = calendarStep?.config?.creatorNote;
-        return <SuccessView onResponse={submitResponse} isSubmitting={isSubmitting} creatorNote={creatorNote} />;
+    // ── Phase: Summary (Quebra-Gelo) ─────────────────────────────
+    if (phase === 'summary') {
+        return (
+            <div className="min-h-screen bg-pink-50 font-sans flex flex-col items-center justify-center p-6 pb-20">
+                <div className="w-full max-w-lg bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-pink-200/30 border border-white">
+                    <SummaryStep
+                        answers={answers}
+                        onConfirm={() => submitResponse(true)}
+                        isSubmitting={isSubmitting}
+                    />
+                </div>
+            </div>
+        );
     }
 
-    const visibleSteps = activeSteps.filter(s => s.type !== 'summary');
+    // ── Phase: Success ───────────────────────────────────────────
+    if (phase === 'success') {
+        const calendarStep = invite.content.steps.find(s => s.type === 'calendar');
+        const creatorNote  = calendarStep?.config?.creatorNote;
+        return (
+            <SuccessView
+                onResponse={submitResponse}
+                isSubmitting={isSubmitting}
+                creatorNote={creatorNote}
+                answers={answers}
+            />
+        );
+    }
+
+    // ── Phase: Quiz ──────────────────────────────────────────────
+    const visibleSteps = activeSteps.filter(s => s.type !== 'summary' && s.type !== 'config');
     const step = visibleSteps[currentStep];
     if (!step) return null;
 
@@ -136,9 +175,12 @@ export default function Invite() {
             default:
                 return (
                     <div className="text-center">
-                        <p className="text-gray-400 text-sm">Unknown step: {step.type}</p>
-                        <button onClick={() => handleAnswer(step.id, null)} className="mt-4 px-6 py-3 bg-pink-500 text-white rounded-xl font-bold">
-                            Next
+                        <p className="text-gray-400 text-sm">Step desconhecido: {step.type}</p>
+                        <button
+                            onClick={() => handleAnswer(step.id, null)}
+                            className="mt-4 px-6 py-3 bg-pink-500 text-white rounded-xl font-bold"
+                        >
+                            Continuar
                         </button>
                     </div>
                 );
@@ -179,7 +221,13 @@ export default function Invite() {
                     {visibleSteps.map((_, i) => (
                         <div
                             key={i}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === currentStep ? 'bg-pink-500 w-4' : (i < currentStep ? 'bg-pink-300' : 'bg-gray-200')}`}
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                i === currentStep
+                                    ? 'bg-pink-500 w-4'
+                                    : i < currentStep
+                                        ? 'bg-pink-300'
+                                        : 'bg-gray-200'
+                            }`}
                         />
                     ))}
                 </div>

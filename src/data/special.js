@@ -11,9 +11,36 @@
 // A função resolveActiveSteps() em utils.js interpreta estas regras com base em
 // { startTime, endTime } guardados na resposta do step_date.
 
+import f_italian from '../assets/f_italian.png';
+import f_sushi from '../assets/f_sushi.png';
+import f_francesinha from '../assets/f_francesinha.png';
+import f_mexican from '../assets/f_mexican.png';
+import f_coffe from '../assets/f_coffe.png';
+import f_icook_m from '../assets/f-icook_m.png';
+import f_icookHome_n from '../assets/f_icookHome_n.png';
+
+import a_icecream from '../assets/a_icecream.png';
+import a_Gameroom from '../assets/a_Gameroom.png';
+import a_MovieHouse from '../assets/a_MovieHouse.png';
+import a_aquashow from '../assets/a_aquashow.png';
+import a_bar_n from '../assets/a_bar_n.png';
+import a_bowlling from '../assets/a_bowlling.png';
+import a_cinema from '../assets/a_cinema.png';
+import a_gameHome_img from '../assets/a_gameHome_img.png';
+import a_golf from '../assets/a_golf.png';
+import a_museu from '../assets/a_museu.png';
+import a_painting from '../assets/a_painting.png';
+import a_piquenique from '../assets/a_piquenique.png';
+import a_reading from '../assets/a_reading.png';
+import a_videogames from '../assets/a_videogames.png';
+import f_hamburger from '../assets/f_hamburger.png';
+import a_walk_n from '../assets/a_walk_n.png';
+import a_disco from '../assets/a_disco_n.png';
+import a_açai from '../assets/a_açai.png';
+
 export const TEMPLATE_SPECIAL = {
     id: 'special',
-    label: 'Noite Especial ✨',
+    label: 'Noite Especial',
     description: 'Planeia cada detalhe de uma noite perfeita.',
     steps: [
 
@@ -31,14 +58,6 @@ export const TEMPLATE_SPECIAL = {
             }
         },
 
-        // ── STEP 2 — GIF ──────────────────────────────────────
-        {
-            id: 'step_happy_gif',
-            type: 'happy_gif',
-            stepLabel: 'O GIF DA VITÓRIA 🏆',
-            title: 'GIF para quando ela disser SIM!',
-            gif: null
-        },
 
         // ── STEP 3 — Mensagem preparação ────────────────────────
         {
@@ -73,10 +92,13 @@ export const TEMPLATE_SPECIAL = {
             subtitle: 'Escolhe o teu favorito.',
             showIf: { stepId: 'step_date', timeRule: 'lunch' },
             options: [
-                { label: 'Italiano 🍝', image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=600&h=600&fit=crop' },
-                { label: 'Sushi 🍣', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=600&fit=crop' },
-                { label: 'Hambúrguer 🍔', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=600&fit=crop' },
-                { label: 'Tacos 🌮', image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&h=600&fit=crop' },
+                { label: 'Italiano ', image: f_italian },
+                { label: 'Sushi', image: f_sushi },
+                { label: 'Francesinha ', image: f_francesinha },
+                { label: 'Comida Mexicana', image: f_mexican },
+                { label: 'Restaurante Normal', image: a_piquenique },
+                { label: 'Comida Feita por mim', image: f_icook_m },
+
             ]
         },
 
@@ -88,10 +110,10 @@ export const TEMPLATE_SPECIAL = {
             subtitle: 'Um miminho para a tarde.',
             showIf: { stepId: 'step_date', timeRule: 'snack' },
             options: [
-                { label: 'Gelado 🍦', image: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=600&h=600&fit=crop' },
-                { label: 'Café e Bolo ☕', image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&h=600&fit=crop' },
-                { label: 'Waffles 🧇', image: 'https://images.unsplash.com/photo-1568278272449-f03348f93630?w=600&h=600&fit=crop' },
-                { label: 'Açaí 🫐', image: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&h=600&fit=crop' },
+                { label: 'Gelado', image: a_icecream },
+                { label: 'Coffee', image: f_coffe },
+                { label: 'Hamburger ', image: f_hamburger },
+                { label: 'Açaí 🫐', image: a_açai },
             ]
         },
 
@@ -103,10 +125,12 @@ export const TEMPLATE_SPECIAL = {
             subtitle: 'O prato principal da noite.',
             showIf: { stepId: 'step_date', timeRule: 'dinner' },
             options: [
-                { label: 'Fino 🍷', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&h=600&fit=crop' },
-                { label: 'Steakhouse 🥩', image: 'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?w=600&h=600&fit=crop' },
-                { label: 'Italiano 🍝', image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=600&h=600&fit=crop' },
-                { label: 'Sushi 🍣', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=600&fit=crop' },
+                { label: 'Italiano', image: f_italian },
+                { label: 'Sushi', image: f_sushi },
+                { label: 'Francesinha ', image: f_francesinha },
+                { label: 'Mexicano ', image: f_mexican },
+                { label: 'Hamburguer ', image: f_hamburger },
+                { label: 'Eu Cozinho (Jantar)', image: f_icookHome_n },
             ]
         },
 
@@ -115,13 +139,17 @@ export const TEMPLATE_SPECIAL = {
             type: 'ranking',
             stepLabel: 'SAÍDA À NOITE',
             title: "Onde vamos acabar a noite?",
-            subtitle: 'A noite ainda é uma criança.',
+            subtitle: 'A noite ainda é uma criança',
             showIf: { stepId: 'step_date', timeRule: 'night_out' },
             options: [
-                { label: 'Passeio Noturno 🌙', image: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=600&h=600&fit=crop' },
-                { label: 'Rooftop Bar 🍹', image: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&h=600&fit=crop' },
-                { label: 'Bar de Cocktails 🍸', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&h=600&fit=crop' },
-                { label: 'Discoteca 💃', image: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=600&h=600&fit=crop' },
+                { label: 'Bar / Cocktails ', image: a_bar_n },
+                { label: 'Passeio Noturno ', image: a_walk_n },
+                { label: 'Filme em casa ', image: a_MovieHouse },
+                { label: 'VideoJogos em Casa ', image: a_videogames },
+                { label: 'Noite de Jogos ', image: a_gameHome_img },
+                { label: 'Bowling ', image: a_bowlling },
+                { label: 'Cinema ', image: a_cinema },
+                { label: 'Disco', image: a_disco },
             ]
         },
 
@@ -133,10 +161,15 @@ export const TEMPLATE_SPECIAL = {
             title: "E para a atividade principal...",
             subtitle: 'O que vamos fazer juntos?',
             options: [
-                { label: 'Cinema 🍿', image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&h=600&fit=crop' },
-                { label: 'Bowling 🎳', image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600&h=600&fit=crop' },
-                { label: 'Arcade 🕹️', image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=600&fit=crop' },
-                { label: 'Karting 🏎️', image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=600&h=600&fit=crop' },
+                { label: 'Cinema', image: a_cinema },
+                { label: 'Bowling ', image: a_bowlling },
+                { label: 'Arcade / Jogos ', image: a_Gameroom },
+                { label: 'Mini Golf ', image: a_golf },
+                { label: 'Museu ', image: a_museu },
+                { label: 'Painting Date ', image: a_painting },
+                { label: 'Jogos em Casa ', image: a_gameHome_img },
+                { label: 'Aquário', image: a_aquashow },
+                { label: 'Ler ao ar livre/caminhar ', image: a_reading },
             ]
         },
 
@@ -145,8 +178,8 @@ export const TEMPLATE_SPECIAL = {
             id: 'step_rating',
             type: 'rating',
             stepLabel: 'AVALIAÇÃO',
-            title: 'Quão ansiosa estás para isto? ✨',
-            subtitle: 'Sê honesta 😏',
+            title: 'Supreendi desta vez não foi? 😏',
+            subtitle: 'Diz-me a verdade de 1 a 5 estrelas',
             config: { maxStars: 5 }
         },
 

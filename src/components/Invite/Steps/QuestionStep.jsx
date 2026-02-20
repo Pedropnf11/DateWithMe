@@ -1,84 +1,153 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function QuestionStep({ step, onAnswer }) {
+// Mensagens fofas para o botão bloqueado (Quebra-Gelo)
+const CUTE_BLOCK_MESSAGES = [
+    "Mas pqqq 🥺",
+    "Não é opção!!",
+    "Tenta outra vez 😂",
+    "Isso não existe aqui",
+    "Vai com calma...",
+    "Sério?? 😭",
+    "O botão diz que não 💅",
+    "Força, tu consegues!",
+];
+
+export default function QuestionStep({ step, onAnswer, templateId }) {
     const [noClicks, setNoClicks] = useState(0);
     const [noPos, setNoPos] = useState({ x: null, y: null });
+    const [toastMsg, setToastMsg] = useState('');
+    const [showToast, setShowToast] = useState(false);
+
+    // Quebra-Gelo → block_cute | Especial → runaway / growing_yes
+    const behavior = step.config?.noButtonBehavior ?? 'block_cute';
+    const isRunaway = behavior === 'runaway' || behavior === 'growing_yes';
+    const isBlocked = behavior === 'block_cute' || behavior === 'none';
+
     const unlockAfter = step.config?.noUnlocksAfter ?? 0;
-    const isNoLocked = unlockAfter > 0 && noClicks < unlockAfter;
-    const yesScale = 1 + noClicks * 0.1; // 10% increase
+    const isNoLocked  = unlockAfter > 0 && noClicks < unlockAfter;
+    const yesScale    = isRunaway ? 1 + noClicks * 0.1 : 1;
 
-    const noMessages = [
-        "Tens a certeza? 🥺",
-        "Pensa melhor...",
-        "Mesmo a sério? 😭",
-        "Última oportunidade...",
-        `Faltam ${unlockAfter - noClicks}...`,
-        "Pronto... 😔",
-    ];
-    const noMsg = noMessages[Math.min(noClicks, noMessages.length - 1)];
+    // ── Comportamento bloqueado com toast fofo ───────────────────
+    const handleBlockedNo = () => {
+        const msg = CUTE_BLOCK_MESSAGES[noClicks % CUTE_BLOCK_MESSAGES.length];
+        setToastMsg(msg);
+        setShowToast(true);
+        setNoClicks(p => p + 1);
+        setTimeout(() => setShowToast(false), 1800);
+    };
 
+    // ── Comportamento fugitivo ───────────────────────────────────
     const moveNo = () => {
-        if (!isNoLocked) {
-            setNoPos({
-                x: Math.random() * 70 + 5,
-                y: Math.random() * 70 + 5,
-            });
-            setNoClicks(prev => prev + 1);
-        }
+        setNoPos({
+            x: Math.random() * 70 + 5,
+            y: Math.random() * 70 + 5,
+        });
+        setNoClicks(p => p + 1);
     };
 
     const handleNo = () => {
-        if (!isNoLocked) submitNo();
-        else moveNo();
-    };
-
-    const submitNo = () => {
-        onAnswer(step.id, 'no');
+        if (isBlocked) {
+            handleBlockedNo();
+        } else {
+            // runaway: se desbloqueado submete, senão foge
+            if (!isNoLocked) {
+                onAnswer(step.id, 'no');
+            } else {
+                moveNo();
+            }
+        }
     };
 
     return (
         <div className="space-y-8 w-full text-center relative min-h-[400px] flex flex-col items-center justify-center">
+
+            {/* Toast fofo — só para blocked */}
+            <AnimatePresence>
+                {showToast && (
+                    <motion.div
+                        key={toastMsg + noClicks}
+                        initial={{ opacity: 0, y: -16, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.9 }}
+                        className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-white border-2 border-pink-200 shadow-xl rounded-2xl px-5 py-3 text-pink-500 font-black text-sm whitespace-nowrap"
+                    >
+                        {toastMsg}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {step.gif && (
-                <img src={step.gif} alt="Vibe" className="w-full h-64 object-contain rounded-3xl shadow-lg mb-4" />
+                <img
+                    src={step.gif}
+                    alt="Vibe"
+                    className="w-full h-56 object-contain rounded-3xl shadow-lg"
+                />
             )}
-            <h2 className="text-3xl font-black text-gray-800 leading-tight mb-4">{step.title}</h2>
+
+            <h2 className="text-3xl font-black text-gray-800 leading-tight px-2">
+                {step.title}
+            </h2>
 
             <div className="flex gap-4 items-center justify-center w-full max-w-sm mx-auto relative h-20">
-                {/* YES */}
-                <button
+
+                {/* ── SIM ── */}
+                <motion.button
                     onClick={() => onAnswer(step.id, 'yes')}
-                    style={{ transform: `scale(${Math.min(yesScale, 3)})` }}
-                    className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-lg rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all origin-center z-10"
+                    animate={{ scale: Math.min(yesScale, 2.5) }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-lg rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-shadow z-10"
                 >
                     SIMMMMM! 💕
-                </button>
+                </motion.button>
 
-                {/* NO */}
-                <button
-                    onMouseEnter={moveNo}
-                    onClick={handleNo}
-                    style={noClicks > 0 ? {
-                        position: 'fixed',
-                        left: `${noPos.x}%`,
-                        top: `${noPos.y}%`,
-                        zIndex: 100,
-                        transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        opacity: isNoLocked ? 0.7 : 1,
-                    } : {}}
-                    className={`px-6 py-4 rounded-2xl font-bold text-sm transition-all shrink-0
-                        ${noClicks === 0
-                            ? 'bg-white border-2 border-gray-100 text-gray-400 hover:text-gray-600'
-                            : 'bg-white border-2 border-pink-100 text-pink-400 shadow-xl'
-                        }
-                    `}
-                >
-                    {noClicks === 0 ? 'Não...' : noMsg}
-                </button>
+                {/* ── NÃO (blocked) ── */}
+                {isBlocked && (
+                    <motion.button
+                        onClick={handleBlockedNo}
+                        whileTap={{ scale: 0.92 }}
+                        animate={showToast ? { x: [0, -4, 4, -4, 0] } : {}}
+                        transition={{ duration: 0.3 }}
+                        className="px-6 py-4 rounded-2xl font-bold text-sm bg-white border-2 border-gray-100 text-gray-300 cursor-not-allowed select-none shrink-0"
+                    >
+                        Não...
+                    </motion.button>
+                )}
+
+                {/* ── NÃO (runaway) ── */}
+                {isRunaway && (
+                    <motion.button
+                        onMouseEnter={moveNo}
+                        onClick={handleNo}
+                        style={noClicks > 0 ? {
+                            position: 'fixed',
+                            left: `${noPos.x}%`,
+                            top:  `${noPos.y}%`,
+                            zIndex: 100,
+                        } : {}}
+                        animate={noClicks > 0 ? { x: 0, y: 0 } : {}}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        className={`px-6 py-4 rounded-2xl font-bold text-sm transition-all shrink-0
+                            ${noClicks === 0
+                                ? 'bg-white border-2 border-gray-100 text-gray-400'
+                                : 'bg-white border-2 border-pink-100 text-pink-400 shadow-xl'
+                            }`}
+                    >
+                        {noClicks === 0 ? 'Não...' : 'Foge! 😂'}
+                    </motion.button>
+                )}
             </div>
 
-            <p className="text-[10px] text-pink-300 font-bold uppercase tracking-widest mt-4 animate-pulse">
-                (O botão 'Não' está a fugir! 😂)
-            </p>
+            {isBlocked && (
+                <p className="text-[10px] text-pink-300 font-bold uppercase tracking-widest animate-pulse">
+                    (O "Não" não é opção aqui 😏)
+                </p>
+            )}
+            {isRunaway && (
+                <p className="text-[10px] text-pink-300 font-bold uppercase tracking-widest animate-pulse">
+                    (O botão 'Não' está a fugir! 😂)
+                </p>
+            )}
         </div>
     );
 }

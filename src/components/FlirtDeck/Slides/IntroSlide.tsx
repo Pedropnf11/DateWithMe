@@ -15,17 +15,19 @@ export default function IntroSlide({ data, compact }: IntroSlideProps) {
                 border: "3px solid rgba(255,80,120,0.4)",
                 boxShadow: "0 0 40px rgba(255,80,120,0.3)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: compact ? 32 : 48, flexShrink: 0,
+                fontSize: compact ? 28 : 40, fontWeight: 700, color: "#fff",
+                letterSpacing: "-0.02em", flexShrink: 0,
+                fontFamily: "'Playfair Display', serif",
             }}>
-                {!data.photo && !data.gif && "👤"}
+                {!data.photo && !data.gif && (data.initials ? data.initials.slice(0, 2).toUpperCase() : "?")}
             </div>
             <div>
-                <div style={{ fontSize: 10, letterSpacing: "0.32em", color: "rgba(255,80,120,0.7)", textTransform: "uppercase", marginBottom: 8 }}>presenting</div>
+                <div style={{ fontSize: 10, letterSpacing: "0.32em", color: "rgba(255,80,120,0.7)", textTransform: "uppercase", marginBottom: 8 }}>Apresentação </div>
                 <h1 style={{ fontSize: compact ? 36 : 50, fontWeight: "bold", color: "#fff", margin: 0, lineHeight: 1, letterSpacing: "-0.02em" }}>{data.name}</h1>
             </div>
             <p style={{ fontSize: compact ? 13 : 17, color: "rgba(255,255,255,0.5)", fontStyle: "italic", margin: 0, lineHeight: 1.5 }}>"{data.tagline}"</p>
             <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, rgba(255,80,120,0.5), transparent)" }} />
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.1em", margin: 0 }}>FLIRTDECK™ · 5 SLIDES</p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.1em", margin: 0 }}>FLIRTDECK™ · 5 SLIDES, simples e fácil</p>
         </div>
     );
 }

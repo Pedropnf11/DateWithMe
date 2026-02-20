@@ -1,6 +1,7 @@
 export interface DeckData {
     intro: {
         name: string;
+        initials?: string;
         tagline: string;
         photo?: string | null;
         gif?: string | null;

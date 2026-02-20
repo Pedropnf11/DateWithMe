@@ -44,6 +44,16 @@ export default function FlirtDeckEditor({ deckData, setDeckData, onClose }: Flir
         }
     };
 
+    const openMobilePreview = () => {
+        try {
+            const str = JSON.stringify(deckData);
+            const b64 = btoa(unescape(encodeURIComponent(str)));
+            window.open(`/flirt-deck?d=${b64}`, '_blank');
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 20 }}
@@ -60,9 +70,34 @@ export default function FlirtDeckEditor({ deckData, setDeckData, onClose }: Flir
                     </h2>
                     <p style={{ fontSize: 13, color: "#9a7080", margin: "4px 0 0" }}>Customize your presentation, then share the link with your crush</p>
                 </div>
-                <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.06)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <X size={18} color="#666" />
-                </button>
+
+                {/* Right side of header: mobile preview (mobile only) + close */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {/* Mobile Preview — visible only on mobile (md:hidden) */}
+                    <button
+                        onClick={openMobilePreview}
+                        className="flex md:hidden"
+                        style={{
+                            padding: "8px 14px",
+                            borderRadius: 12,
+                            background: "rgba(255,64,104,0.06)",
+                            border: "1px solid rgba(255,64,104,0.18)",
+                            color: "#ff4068",
+                            fontFamily: "'Playfair Display', serif",
+                            fontSize: 12,
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            letterSpacing: "0.02em",
+                        }}
+                    >
+                        Preview
+                    </button>
+
+                    <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.06)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <X size={18} color="#666" />
+                    </button>
+                </div>
             </div>
 
             {/* Modal body: editor + preview */}
@@ -74,8 +109,17 @@ export default function FlirtDeckEditor({ deckData, setDeckData, onClose }: Flir
                         <Field label="Your Name">
                             <Input value={deckData.intro.name} onChange={e => updateIntro("name", e.target.value)} />
                         </Field>
+                        <Field label="Iniciais (2 letras)">
+                            <Input
+                                value={deckData.intro.initials ?? ""}
+                                onChange={e => updateIntro("initials", e.target.value.toUpperCase().slice(0, 2))}
+                                placeholder="Ex: PS"
+                                maxLength={2}
+                                style={{ textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700 }}
+                            />
+                        </Field>
                         <Field label="Your Tagline">
-                            <Input value={deckData.intro.tagline} onChange={e => updateIntro("tagline", e.target.value)} placeholder="Not your average date. 😏" />
+                            <Input value={deckData.intro.tagline} onChange={e => updateIntro("tagline", e.target.value)} placeholder="Not your average date." />
                         </Field>
                     </EditorSection>
 
@@ -83,7 +127,6 @@ export default function FlirtDeckEditor({ deckData, setDeckData, onClose }: Flir
                         {deckData.whyMe.map((w, i) => (
                             <div key={i} style={{ background: "rgba(255,64,104,0.04)", borderRadius: 12, padding: "12px", marginBottom: 8, border: "1px solid rgba(255,64,104,0.08)" }}>
                                 <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                                    <Input value={w.emoji} onChange={e => updateWhyMe(i, "emoji", e.target.value)} style={{ width: 52 }} placeholder="🎯" />
                                     <Input value={w.title} onChange={e => updateWhyMe(i, "title", e.target.value)} placeholder="Title" style={{ flex: 1 }} />
                                 </div>
                                 <Input value={w.desc} onChange={e => updateWhyMe(i, "desc", e.target.value)} placeholder="Description" />
@@ -110,7 +153,7 @@ export default function FlirtDeckEditor({ deckData, setDeckData, onClose }: Flir
                                 )}
                             </div>
                         ))}
-                        <AddButton onClick={() => setDeckData(d => ({ ...d, funFacts: [...d.funFacts, "New fun fact 🎉"] }))}>
+                        <AddButton onClick={() => setDeckData(d => ({ ...d, funFacts: [...d.funFacts, "New fun fact"] }))}>
                             + Add fun fact
                         </AddButton>
                     </EditorSection>
@@ -136,22 +179,20 @@ export default function FlirtDeckEditor({ deckData, setDeckData, onClose }: Flir
                         </AddButton>
                     </EditorSection>
 
-                    {/* Share & Preview buttons */}
+                    {/* Share & Preview buttons (desktop) */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
                         <button
                             onClick={() => copyLink(true)}
                             style={{ width: "100%", padding: "14px", borderRadius: 14, background: "linear-gradient(135deg, #ff5078, #ff3060)", border: "none", color: "#fff", fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 800, cursor: "pointer", letterSpacing: "0.04em", boxShadow: "0 8px 24px rgba(255,80,120,0.35)" }}>
-                            🔗 Copy & Open Link
+                            Copy & Open Link
                         </button>
 
+                        {/* Mobile preview button hidden on mobile (shown in header instead) */}
                         <button
-                            onClick={() => {
-                                const str = JSON.stringify(deckData);
-                                const b64 = btoa(unescape(encodeURIComponent(str)));
-                                window.open(`/flirt-deck?d=${b64}`, '_blank');
-                            }}
+                            onClick={openMobilePreview}
+                            className="hidden md:block"
                             style={{ width: "100%", padding: "12px", borderRadius: 14, background: "rgba(255,64,104,0.06)", border: "1px solid rgba(255,64,104,0.15)", color: "#ff4068", fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-                            📱 Mobile Preview
+                            Mobile Preview
                         </button>
                     </div>
                 </div>

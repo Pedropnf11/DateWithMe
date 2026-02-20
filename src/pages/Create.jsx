@@ -40,7 +40,7 @@ function buildCalendarDays(referenceDate) {
     return days;
 }
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 const MONTH_NAMES = ['JAN', 'FEV', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 // ─── Calendar Step Component ─────────────────────────────────────
@@ -147,13 +147,13 @@ function CalendarStep({ step, updateQuestion }) {
                         <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-pink-500"></div>
                     </label>
                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                        OFFER FULL CALENDAR
+                        Oferecer Calendário Completo
                     </span>
                 </div>
 
                 <div className="space-y-1">
-                    <p className="text-[11px] font-black text-gray-800 uppercase tracking-tighter">Select available dates:</p>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Next 30 days: {rangeLabel}</p>
+                    <p className="text-[11px] font-black text-gray-800 uppercase tracking-tighter">Escolha as datas:</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Próximos 30 dias: {rangeLabel}</p>
                 </div>
             </div>
 
@@ -163,8 +163,7 @@ function CalendarStep({ step, updateQuestion }) {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     className="bg-white p-3 rounded-2xl shadow-2xl border-2 border-pink-100 text-center space-y-1 max-w-[180px] mx-auto absolute inset-0 m-auto h-fit z-50 overflow-hidden"
                 >
-                    <p className="text-xl">🕊️</p>
-                    <p className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Liberdade Ativada!</p>
+                    <p className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Modo Livre Ativado!</p>
                 </motion.div>
             )}
 
@@ -417,6 +416,7 @@ function HappyGifStep({ step, updateQuestion }) {
 
 // ─── Ranking Step Component (Creator view) ───────────────────────
 function RankingStep({ step, updateQuestion }) {
+    const { quizData } = useQuizStore();
     const fileInputRef = useRef(null);
     const [customName, setCustomName] = useState('');
     const [customImagePreview, setCustomImagePreview] = useState(null);
@@ -468,10 +468,11 @@ function RankingStep({ step, updateQuestion }) {
     return (
         <div className="space-y-8 w-full">
             <div className="text-center space-y-4">
-                <input
+                <textarea
                     value={step.title}
                     onChange={(e) => updateQuestion(step.id, { title: e.target.value })}
-                    className="w-full text-center text-3xl font-black text-gray-800 bg-transparent outline-none placeholder-gray-300 pb-2 border-b-2 border-gray-100 focus:border-pink-400"
+                    rows={2}
+                    className="w-full text-center text-3xl font-black text-gray-800 bg-transparent outline-none placeholder-gray-300 pb-2 border-b-2 border-gray-100 focus:border-pink-400 resize-none overflow-hidden"
                 />
 
                 <div className="flex flex-col items-center gap-1">
@@ -510,7 +511,7 @@ function RankingStep({ step, updateQuestion }) {
                                 </div>
 
                                 {/* Label */}
-                                <div className="bg-white/90 backdrop-blur-sm absolute bottom-0 left-0 w-full py-2 px-1 text-center">
+                                <div className="bg-white/90 backdrop-blur-sm absolute bottom-0 left-0 w-full py-0.1 px-0.1 text-center">
                                     <span className="text-[10px] font-bold text-gray-800 truncate block uppercase tracking-tighter">{label}</span>
                                 </div>
 
@@ -564,20 +565,24 @@ function RankingStep({ step, updateQuestion }) {
                         )}
 
                         <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full py-3 bg-white border-2 border-pink-200 text-pink-500 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-pink-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-                            >
-                                <Upload size={16} strokeWidth={3} /> Passo 1: Upload de Imagem
-                            </button>
-                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                            {quizData.templateId !== 'first_date' && (
+                                <>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-full py-3 bg-white border-2 border-pink-200 text-pink-500 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-pink-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                                    >
+                                        <Upload size={16} strokeWidth={3} /> Passo 1: Upload de Imagem
+                                    </button>
+                                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                                </>
+                            )}
 
                             <button
                                 onClick={addCustomOption}
                                 disabled={!customName.trim()}
                                 className="w-full py-4 bg-pink-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-pink-600 transition-all disabled:opacity-30 disabled:grayscale shadow-lg shadow-pink-200"
                             >
-                                + Passo 2: Adicionar Opção
+                                {quizData.templateId === 'first_date' ? '+ Adicionar Opção' : '+ Passo 2: Adicionar Opção'}
                             </button>
                         </div>
                     </div>
@@ -683,10 +688,11 @@ export default function Create() {
                         </h2>
 
                         {/* Editable Question Title */}
-                        <input
+                        <textarea
                             value={currentStep.title}
                             onChange={(e) => updateQuestion(currentStep.id, { title: e.target.value })}
-                            className="w-full text-center text-3xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-pink-500 focus:outline-none pb-2 placeholder-gray-300"
+                            rows={3}
+                            className="w-full text-center text-3xl font-black text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-pink-500 focus:outline-none pb-2 placeholder-gray-300 resize-none overflow-hidden"
                             placeholder="Type your question..."
                         />
 
@@ -735,10 +741,11 @@ export default function Create() {
             case 'rating':
                 return (
                     <div className="text-center space-y-5">
-                        <input
+                        <textarea
                             value={currentStep.title}
                             onChange={(e) => updateQuestion(currentStep.id, { title: e.target.value })}
-                            className="w-full text-center text-2xl font-black text-gray-800 bg-transparent outline-none border-b-2 border-gray-100 focus:border-pink-400 pb-2"
+                            rows={2}
+                            className="w-full text-center text-2xl font-black text-gray-800 bg-transparent outline-none border-b-2 border-gray-100 focus:border-pink-400 pb-2 resize-none overflow-hidden"
                         />
                         <div className="flex justify-center gap-2 text-yellow-400">
                             {[1, 2, 3, 4, 5].map(i => <StarIcon key={i} filled={true} />)}
@@ -771,48 +778,79 @@ export default function Create() {
                     </div>
                 );
 
-            case 'summary':
+            case 'summary': {
+                const allQ   = quizData.questions;
+                const calQ   = allQ.find(q => q.type === 'calendar');
+                const foodQ  = allQ.find(q => q.id === 'step_food' || q.id === 'step_lunch' || q.id === 'step_dinner');
+                const actQ   = allQ.find(q => q.id === 'step_activity' || q.id === 'step_after_activity');
+                const snackQ = allQ.find(q => q.id === 'step_snack');
+                const nightQ = allQ.find(q => q.id === 'step_night_out');
+                const firstActive = (q) => q?.options?.filter(o => !o.excluded)?.[0]?.label;
+
+                const summaryItems = [
+                    { emoji: '📅', label: 'Calendário', value: calQ?.config?.mode === 'liberty' ? 'Modo livre — ela escolhe qualquer dia' : `${calQ?.config?.suggestedDates?.length || 0} dia(s) sugerido(s)` },
+                    { emoji: '🍽️', label: 'Comida',     value: firstActive(foodQ)  ? `${firstActive(foodQ)} + mais opções`  : null },
+                    { emoji: '☕',  label: 'Lanche',     value: firstActive(snackQ) ? `${firstActive(snackQ)} + mais opções` : null },
+                    { emoji: '🎯', label: 'Atividade',   value: firstActive(actQ)   ? `${firstActive(actQ)} + mais opções`   : null },
+                    { emoji: '🌙', label: 'Noite',       value: firstActive(nightQ) ? `${firstActive(nightQ)} + mais opções` : null },
+                ].filter(i => i.value);
+
                 return (
-                    <div className="text-center space-y-6">
-                        <h2 className="text-3xl font-black text-gray-800 uppercase tracking-tight">PRONTO PARA ENVIAR?</h2>
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">Pronto para enviar?</h2>
 
-                        {/* Creator Note Editor - Message Style */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white text-xs font-black">YU</div>
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">A tua mensagem especial</span>
+                        {/* Resumo do que o criador configurou */}
+                        {summaryItems.length > 0 && (
+                            <div className="bg-pink-50 rounded-[1.5rem] p-5 space-y-3 border border-pink-100">
+                                <p className="text-[9px] font-black text-pink-400 uppercase tracking-widest text-center mb-1">
+                                    O que ela vai ver no convite
+                                </p>
+                                {summaryItems.map((item, i) => (
+                                    <div key={i} className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-pink-50">
+                                        <span className="text-lg">{item.emoji}</span>
+                                        <div>
+                                            <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest">{item.label}</p>
+                                            <p className="text-xs font-black text-gray-700">{item.value}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+                        )}
 
-                            <div className="relative group">
-                                <textarea
-                                    value={quizData.questions.find(q => q.type === 'calendar')?.config?.creatorNote || ''}
-                                    onChange={(e) => {
-                                        const calendarStep = quizData.questions.find(q => q.type === 'calendar');
-                                        if (calendarStep) {
-                                            updateQuestion(calendarStep.id, {
-                                                config: { ...calendarStep.config, creatorNote: e.target.value }
-                                            });
-                                        }
-                                    }}
-                                    placeholder="Escreve algo fofinho... (Ex: Mal posso esperar para te ver! 💕)"
-                                    className="w-full h-32 bg-white p-6 rounded-[2rem] rounded-tl-none shadow-xl border-2 border-pink-100/50 text-gray-700 font-medium outline-none focus:border-pink-300 transition-all resize-none italic"
-                                />
-                                <div className="absolute -left-2 top-0 w-4 h-4 bg-white border-l-2 border-t-2 border-pink-100/50 rotate-[-45deg]" />
+                        {/* Creator Note — só no Especial */}
+                        {quizData.templateId !== 'first_date' && (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white text-xs font-black">YU</div>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">A tua mensagem especial para ela</span>
+                                </div>
+                                <div className="relative">
+                                    <textarea
+                                        value={calQ?.config?.creatorNote || ''}
+                                        onChange={(e) => {
+                                            if (calQ) updateQuestion(calQ.id, { config: { ...calQ.config, creatorNote: e.target.value } });
+                                        }}
+                                        placeholder="Escreve algo fofinho... (Ex: Mal posso esperar para te ver! 💕)"
+                                        className="w-full h-28 bg-white p-5 rounded-[1.5rem] rounded-tl-none shadow-md border-2 border-pink-100 text-gray-700 font-medium outline-none focus:border-pink-300 transition-all resize-none italic text-sm"
+                                    />
+                                    <div className="absolute -left-2 top-0 w-4 h-4 bg-white border-l-2 border-t-2 border-pink-100 rotate-[-45deg]" />
+                                </div>
+                                <p className="text-[9px] text-pink-400 font-bold uppercase tracking-widest text-center animate-pulse">
+                                    ✨ Aparece com animação no final do convite dela!
+                                </p>
                             </div>
-                            <p className="text-[9px] text-pink-400 font-bold uppercase tracking-widest animate-pulse">
-                                ✨ Esta mensagem aparecerá com animação no final do convite!
-                            </p>
-                        </div>
+                        )}
 
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl font-black text-white shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl font-black text-white shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm"
                         >
                             {isSaving ? 'A CRIAR...' : 'GUARDAR & ENVIAR 💌'}
                         </button>
                     </div>
                 );
+            }
 
             default:
                 return <div>Unknown step type: {currentStep.type}</div>;

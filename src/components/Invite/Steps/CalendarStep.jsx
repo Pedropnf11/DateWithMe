@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Check, X } from 'lucide-react';
+import { ChevronRight, Check, X, Clock } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import TimePickerOverlay from './TimePickerOverlay';
 
 const WEEKDAYS = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
 const MONTH_NAMES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -17,6 +18,7 @@ export default function CalendarStep({ step, onAnswer }) {
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
     const [showLibertyPopup, setShowLibertyPopup] = useState(mode === 'liberty');
+    const [openPicker, setOpenPicker] = useState(null); // 'start' | 'end' | null
 
     const libertyMessage = config.libertyMessage || 'Para ti tenho todo o tempo do mundo...';
     const libertyGif = config.libertyGif || 'https://media.tenor.com/CAtqFqK_2i0AAAAd/dance-girl.gif';
@@ -26,8 +28,8 @@ export default function CalendarStep({ step, onAnswer }) {
         if (mode === 'suggestions' && selectedDate) {
             const suggestion = suggestedDates.find(d => d.date === selectedDate);
             if (suggestion) {
-                setCustomStart(suggestion.start);
-                setCustomEnd(suggestion.end);
+                setCustomStart(suggestion.start || '20:00');
+                setCustomEnd(suggestion.end || '22:00');
             }
         }
     }, [selectedDate, mode, suggestedDates]);
@@ -80,7 +82,7 @@ export default function CalendarStep({ step, onAnswer }) {
     return (
         <div className="space-y-4 w-full">
             <div className="text-center">
-                <h2 className="text-2xl font-black text-gray-800">{step.title}</h2>
+                <h2 className="text-2xl font-black text-gray-800 tracking-tighter uppercase italic">{step.title}</h2>
             </div>
 
             <div className="space-y-5">
@@ -102,6 +104,7 @@ export default function CalendarStep({ step, onAnswer }) {
                             return (
                                 <button
                                     key={dateStr}
+                                    type="button"
                                     disabled={!isAvailable}
                                     onClick={() => setSelectedDate(dateStr)}
                                     className={`aspect-square flex items-center justify-center rounded-xl text-sm font-black transition-all relative
@@ -125,27 +128,41 @@ export default function CalendarStep({ step, onAnswer }) {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                         <div className="flex flex-col items-center gap-4">
                             <p className="text-[10px] font-black text-gray-400 text-center uppercase tracking-widest">
-                                {mode === 'suggestions' ? 'HORÁRIO SUGERIDO' : 'ESCOLHE O HORÁRIO'}
+                                {mode === 'suggestions' ? 'HORÁRIO SUGERIDO/DISPONÍVEL' : 'ESCOLHE O HORÁRIO'}
                             </p>
 
-                            <div className="flex items-center justify-center gap-4 bg-gray-50 p-4 rounded-3xl border border-gray-100">
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Começa às</span>
-                                    <input
-                                        type="time"
+                            <div className="flex items-center justify-center gap-4 bg-gray-50 p-4 rounded-[2.5rem] border border-gray-100 w-full relative">
+                                <div className="flex flex-col items-center gap-1 relative">
+                                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none">Início</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenPicker(openPicker === 'start' ? null : 'start')}
+                                        className="text-2xl font-black text-gray-700 hover:text-pink-500 transition-colors flex items-center gap-2"
+                                    >
+                                        {customStart || '--:--'} <Clock size={16} className="text-pink-300" />
+                                    </button>
+                                    <TimePickerOverlay
                                         value={customStart}
-                                        onChange={e => setCustomStart(e.target.value)}
-                                        className="bg-transparent border-none text-2xl font-black text-gray-700 focus:outline-none cursor-pointer"
+                                        onChange={(val) => { setCustomStart(val); setOpenPicker(null); }}
+                                        isOpen={openPicker === 'start'}
+                                        onClose={() => setOpenPicker(null)}
                                     />
                                 </div>
-                                <div className="w-px h-10 bg-gray-200" />
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Até às</span>
-                                    <input
-                                        type="time"
+                                <div className="w-px h-10 bg-gray-200 mx-2" />
+                                <div className="flex flex-col items-center gap-1 relative">
+                                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none">Fim</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenPicker(openPicker === 'end' ? null : 'end')}
+                                        className="text-2xl font-black text-gray-700 hover:text-pink-500 transition-colors flex items-center gap-2"
+                                    >
+                                        {customEnd || '--:--'} <Clock size={16} className="text-pink-300" />
+                                    </button>
+                                    <TimePickerOverlay
                                         value={customEnd}
-                                        onChange={e => setCustomEnd(e.target.value)}
-                                        className="bg-transparent border-none text-2xl font-black text-gray-700 focus:outline-none cursor-pointer"
+                                        onChange={(val) => { setCustomEnd(val); setOpenPicker(null); }}
+                                        isOpen={openPicker === 'end'}
+                                        onClose={() => setOpenPicker(null)}
                                     />
                                 </div>
                             </div>
