@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
 
+import { checkRateLimit } from '../utils/security';
 import ScratchCalendar from '../components/Surprise/ScratchCalendar';
 import WordGuess from '../components/Surprise/WordGuess';
 import MysteryClues from '../components/Surprise/MysteryClues';
@@ -50,6 +51,12 @@ export default function SurpriseInvite() {
     };
 
     const handleAccept = async () => {
+        // Fix 4: Rate limiting
+        const { allowed, waitSeconds } = checkRateLimit('submit_response');
+        if (!allowed) {
+            alert(`Aguarda ${waitSeconds} segundos antes de submeter novamente.`);
+            return;
+        }
         setIsSubmitting(true);
         await supabase.rpc('submit_response', {
             invite_uuid: id,
@@ -91,7 +98,7 @@ export default function SurpriseInvite() {
                 return (
                     <FinalMessage
                         message={invite.message}
-                        herName={invite.herName}
+
                         onAccept={handleAccept}
                         isSubmitting={isSubmitting}
                         selectedDate={selectedDate}

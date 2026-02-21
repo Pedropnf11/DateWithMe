@@ -295,7 +295,7 @@ export default function Home() {
                         SURPREENDE-A AGORA — É GRÁTIS
                     </motion.button>
                     <div className="mt-8 flex items-center justify-center md:justify-start gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-pink-400">
-                        ❤️Várias Pessoas já testaram, junta-te a elas!
+                        ❤️Várias pessoas já testaram, junta-te a elas!
                     </div>
                 </div>
 
@@ -364,7 +364,7 @@ export default function Home() {
                         answer="É uma plataforma feita para ajudar-te a criar convites interativos e românticos para o teu date em menos de 3 minutos. Podes personalizar atividades, horários e até adicionar surpresas."
                     />
                     <FAQItem
-                        question="É gratuito?"
+                        question="É gráts   ?"
                         answer={<>Sim! O DateWithMe é totalmente <strong className="font-black text-pink-600">gratuito temporariamente</strong>, aproveita! Podes criar e partilhar convites sem qualquer custo.</>}
                     />
                     <FAQItem
@@ -373,7 +373,7 @@ export default function Home() {
                     />
                     <FAQItem
                         question="Quanto tempo duram os links?"
-                        answer="Os links e respostas ficam disponíveis enquanto não os apagares. No entanto, por segurança, recomendamos que guardes o plano assim que confirmado!"
+                        answer="Para garantir a tua segurança e privacidade total, os convites e as respostas são eliminados automaticamente após 24 horas. Guarda os detalhes assim que tiveres o teu sim!"
                     />
                     <FAQItem
                         question="Ela precisa de instalar alguma app?"
@@ -383,6 +383,11 @@ export default function Home() {
             </section>
 
             <footer className="text-center pb-10 text-gray-400 text-xs font-black uppercase tracking-widest">
+                <div className="flex justify-center gap-4 mb-4">
+                    <button onClick={() => navigate('/privacidade')} className="hover:text-pink-500 transition-colors">Privacidade</button>
+                    <span>•</span>
+                    <button onClick={() => navigate('/termos')} className="hover:text-pink-500 transition-colors">Termos</button>
+                </div>
                 © 2026 DateWithMe. Todos os direitos reservados.
                 <div className="flex justify-center gap-6 mt-4">
                     <span className="cursor-pointer hover:text-pink-400 transition-colors">Instagram</span>

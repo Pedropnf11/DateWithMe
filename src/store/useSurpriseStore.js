@@ -13,7 +13,6 @@ const useSurpriseStore = create((set, get) => ({
   location: '',
   clues: [],
   message: '',
-  herName: '',
 
   // Setters
   setStep: (step) => set({ currentStep: step }),
@@ -56,12 +55,11 @@ const useSurpriseStore = create((set, get) => ({
     location: '',
     clues: [],
     message: '',
-    herName: '',
   }),
 
   // Guardar na DB
   saveInvite: async () => {
-    const { dateOptions, location, clues, message, herName, activities, customActivityName } = get();
+    const { dateOptions, location, clues, message, activities, customActivityName } = get();
 
     if (!location.trim()) return { error: 'Adiciona o local secreto!' };
     if (clues.length < 3) return { error: 'Adiciona pelo menos 3 pistas!' };
@@ -77,7 +75,6 @@ const useSurpriseStore = create((set, get) => ({
       location: location.toUpperCase().trim(),
       clues,
       message,
-      herName,
     };
 
     // Usar RPC segura que devolve creator_key sem expor via SELECT público
@@ -91,8 +88,8 @@ const useSurpriseStore = create((set, get) => ({
 
     const invite = Array.isArray(data) ? data[0] : data;
 
-    // Security Fix: Store key in session storage
-    sessionStorage.setItem(`ck_${invite.id}`, invite.creator_key);
+    // Security Fix: Store key in local storage (persistent across tabs/browser close)
+    localStorage.setItem(`ck_${invite.id}`, invite.creator_key);
 
     return {
       success: true,

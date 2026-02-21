@@ -69,14 +69,16 @@ const useQuizStore = create((set, get) => ({
 
         const invite = Array.isArray(data) ? data[0] : data;
 
-        // Security Fix: Store key in local storage
+        // Guardar em localStorage para persistir entre sessões
         localStorage.setItem(`ck_${invite.id}`, invite.creator_key);
 
         // Retorna os links gerados
+        // O link privado leva a chave como query param (?key=...) como fallback
+        // — se o utilizador abrir noutro browser ou dispositivo, a chave está na URL
         return {
             success: true,
             publicLink: `/convite/${invite.id}`,
-            privateLink: `/resultado/${invite.id}`
+            privateLink: `/resultado/${invite.id}?key=${invite.creator_key}`
         };
     }
 }));

@@ -13,26 +13,25 @@ export default function Result() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Get key from search params OR session storage
+    // Obter a chave: primeiro da URL (?key=), depois do localStorage
     const [key, setKey] = useState(() => {
         const urlKey = searchParams.get('key');
-        const sessionKey = localStorage.getItem(`ck_${id}`);
+        const storedKey = localStorage.getItem(`ck_${id}`);
 
-        // If key is in URL, move it to local storage and clean URL
         if (urlKey) {
+            // Guardar no localStorage e limpar a URL (chave não deve ficar exposta)
             localStorage.setItem(`ck_${id}`, urlKey);
-            window.history.replaceState({}, '', window.location.pathname);
+            window.history.replaceState({}, '', `/resultado/${id}`);
             return urlKey;
         }
-        return sessionKey;
+        return storedKey;
     });
 
     useEffect(() => {
-        if (searchParams.get('key')) {
-            const newKey = searchParams.get('key');
-            localStorage.setItem(`ck_${id}`, newKey);
-            setKey(newKey);
-            // Clean URL
+        const urlKey = searchParams.get('key');
+        if (urlKey) {
+            localStorage.setItem(`ck_${id}`, urlKey);
+            setKey(urlKey);
             window.history.replaceState({}, '', `/resultado/${id}`);
         }
     }, [id, searchParams]);
@@ -47,19 +46,27 @@ export default function Result() {
 
             setLoading(true);
 
-            // 1. Fetch invite info via view pública (sem creator_key)
-            const { data: inviteData, error: inviteError } = await supabase
-                .from('invites_public')
-                .select('id, content, status, created_at')
-                .eq('id', id)
-                .single();
+            // 1. Fetch invite info via RPC get_safe_invite (more reliable + filters data)
+            const { data: inviteDataArray, error: inviteError } = await supabase
+                .rpc('get_safe_invite', { p_invite_id: id });
 
-            if (inviteError || !inviteData) {
-                setError('Invite não encontrado ou acesso restrito.');
-                setLoading(false);
-                return;
+            if (inviteError || !inviteDataArray || inviteDataArray.length === 0) {
+                // Fallback to view just in case
+                const { data: viewData, error: viewError } = await supabase
+                    .from('invites_public')
+                    .select('id, content, status, created_at')
+                    .eq('id', id)
+                    .single();
+
+                if (viewError || !viewData) {
+                    setError('Invite não encontrado ou acesso restrito.');
+                    setLoading(false);
+                    return;
+                }
+                setInvite(viewData);
+            } else {
+                setInvite(inviteDataArray[0]);
             }
-            setInvite(inviteData);
 
             // 2. Fetch responses via secure RPC (validates key on server)
             const { data: respData, error: respError } = await supabase
@@ -101,6 +108,8 @@ export default function Result() {
         </div>
     );
 
+    const isSurprise = invite?.content?.templateId === 'surprise';
+
     return (
         <div className="min-h-screen bg-pink-50 font-sans pb-20">
             {/* Header / Stats */}
@@ -128,7 +137,6 @@ export default function Result() {
                     responses.map((resp, idx) => {
                         const ans = resp.answers || {};
                         const decisao = resp.decisao; // 'sim' | 'nao'
-                        const dateAns = ans['step_date'] || {};
 
                         return (
                             <motion.div
@@ -151,45 +159,64 @@ export default function Result() {
 
                                     {decisao === 'sim' && (
                                         <div className="space-y-6">
-                                            {/* Date Info */}
-                                            {dateAns.date && (
+                                            {/* Surprise Mode Specific Rendering */}
+                                            {isSurprise ? (
                                                 <div className="bg-pink-50 p-6 rounded-2xl flex items-center justify-between">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-pink-500">
                                                             <Calendar size={24} />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-black text-gray-800 uppercase tracking-wider">{new Date(dateAns.date + 'T00:00:00').toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-                                                            <p className="text-[10px] font-black text-pink-400 uppercase">{dateAns.startTime} - {dateAns.endTime}</p>
+                                                            <p className="text-sm font-black text-gray-800 uppercase tracking-wider">
+                                                                {ans.chosen_date ? new Date(ans.chosen_date + 'T00:00:00').toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Data não definida'}
+                                                            </p>
+                                                            <p className="text-[10px] font-black text-pink-400 uppercase">
+                                                                {ans.chosen_time || 'Horário não definido'}
+                                                            </p>
                                                         </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className="text-[10px] font-black text-pink-500 uppercase px-3 py-1 bg-white rounded-full border border-pink-100 italic">{dateAns.badge || 'DATE SCENARIO'}</span>
                                                     </div>
                                                 </div>
-                                            )}
-
-                                            {/* Other Steps Summary */}
-                                            <div className="grid grid-cols-1 gap-3">
-                                                {Object.entries(ans).map(([key, val]) => {
-                                                    if (key === 'step_date') return null;
-                                                    const step = invite?.content?.steps?.find(s => s.id === key);
-                                                    if (!step) return null;
-
-                                                    return (
-                                                        <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                                            <div className="flex items-center gap-3 text-left">
-                                                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{step.title}</span>
+                                            ) : (
+                                                <>
+                                                    {/* Original Quiz Rendering */}
+                                                    {ans['step_date']?.date && (
+                                                        <div className="bg-pink-50 p-6 rounded-2xl flex items-center justify-between">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-pink-500">
+                                                                    <Calendar size={24} />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-black text-gray-800 uppercase tracking-wider">
+                                                                        {new Date(ans['step_date'].date + 'T00:00:00').toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                                    </p>
+                                                                    <p className="text-[10px] font-black text-pink-400 uppercase">
+                                                                        {ans['step_date'].startTime} - {ans['step_date'].endTime}
+                                                                    </p>
+                                                                </div>
                                                             </div>
-                                                            <span className="text-sm font-black text-gray-800 text-right">
-                                                                {typeof val === 'string'
-                                                                    ? val
-                                                                    : (val.label || 'Opção selecionada')}
-                                                            </span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                    )}
+
+                                                    <div className="grid grid-cols-1 gap-3">
+                                                        {Object.entries(ans).map(([k, val]) => {
+                                                            if (k === 'step_date') return null;
+                                                            const step = invite?.content?.steps?.find(s => s.id === k);
+                                                            if (!step) return null;
+
+                                                            return (
+                                                                <div key={k} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                                                    <div className="flex items-center gap-3 text-left">
+                                                                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{step.title}</span>
+                                                                    </div>
+                                                                    <span className="text-sm font-black text-gray-800 text-right">
+                                                                        {typeof val === 'string' ? val : (val.label || 'Opção selecionada')}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
 

@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildCalendarDays, WEEKDAYS, MONTH_NAMES } from '../utils/calendarUtils';
+// Fix 3, 4, 6: import das utilidades de segurança centralizadas
+import { validateImageFile, validateAndSetGifUrl, checkRateLimit } from '../utils/security';
 
 // Calendar helpers previously here are now in utils/calendarUtils.js
 
@@ -139,8 +141,6 @@ function CalendarStep({ step, updateQuestion }) {
 
             {mode === 'liberty' ? (
                 <div className="space-y-4">
-
-
                     {/* Liberty Popup Settings */}
                     <div className="bg-gray-50/80 p-6 rounded-[2rem] border border-gray-100 space-y-4 text-left shadow-inner">
                         <div className="flex items-center gap-2">
@@ -164,19 +164,15 @@ function CalendarStep({ step, updateQuestion }) {
                                 {config.libertyGif && (
                                     <img src={config.libertyGif} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" alt="Preview" />
                                 )}
+                                {/* Fix 6: validateAndSetGifUrl usa endsWith — não bypassável com evil-giphy.com */}
                                 <input
                                     value={config.libertyGif || ''}
-                                    onChange={(e) => {
-                                        const url = e.target.value;
-                                        const SAFE = ['giphy.com', 'tenor.com', 'imgur.com'];
-                                        try {
-                                            if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
-                                                alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
-                                                return;
-                                            }
-                                        } catch { /* ignore invalid URL while typing */ }
-                                        updateQuestion(step.id, { config: { ...config, libertyGif: url } });
-                                    }}
+                                    onChange={(e) =>
+                                        validateAndSetGifUrl(
+                                            e.target.value,
+                                            (url) => updateQuestion(step.id, { config: { ...config, libertyGif: url } })
+                                        )
+                                    }
                                     placeholder="Link do GIF..."
                                     className="flex-1 bg-white px-4 py-3 rounded-xl border border-gray-100 text-[10px] text-gray-400 font-mono outline-none focus:border-pink-300 transition-all shadow-sm"
                                 />
@@ -303,24 +299,17 @@ function HappyGifStep({ step, updateQuestion }) {
     const [mode, setMode] = useState(step.gif ? 'url' : null);
     const fileInputRef = useRef(null);
 
-    const handleUrlChange = (e) => {
-        updateQuestion(step.id, { gif: e.target.value });
+    const handleUrlChange = (url) => {
+        updateQuestion(step.id, { gif: url });
     };
 
-    const handleFileChange = (e) => {
+    // Fix 3: Validar magic bytes reais antes de aceitar o ficheiro
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Security Fix: Validate type and size
-        const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!ALLOWED.includes(file.type)) {
-            alert('Apenas imagens (JPG, PNG, GIF, WEBP) são permitidas.');
-            return;
-        }
-        if (file.size > 2 * 1024 * 1024) {
-            alert('O ficheiro é demasiado grande. Máximo 2MB.');
-            return;
-        }
+        const error = await validateImageFile(file);
+        if (error) { alert(error); return; }
 
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -364,20 +353,11 @@ function HappyGifStep({ step, updateQuestion }) {
 
             {mode === 'url' && (
                 <div className="space-y-3">
+                    {/* Fix 6: validateAndSetGifUrl usa endsWith — não bypassável */}
                     <input
                         autoFocus
                         value={step.gif || ''}
-                        onChange={(e) => {
-                            const url = e.target.value;
-                            const SAFE = ['giphy.com', 'tenor.com', 'imgur.com'];
-                            try {
-                                if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
-                                    alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
-                                    return;
-                                }
-                            } catch { }
-                            handleUrlChange(e);
-                        }}
+                        onChange={(e) => validateAndSetGifUrl(e.target.value, handleUrlChange)}
                         placeholder="Paste GIF / image URL here..."
                         className="w-full text-center text-sm p-3 rounded-xl border-2 border-gray-200 focus:border-pink-500 outline-none"
                     />
@@ -438,20 +418,13 @@ function RankingStep({ step, updateQuestion }) {
         updateQuestion(step.id, { options: newOpts });
     };
 
-    const handleFileChange = (e) => {
+    // Fix 3: Validar magic bytes reais antes de aceitar o ficheiro
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Security Fix: Validate type and size
-        const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!ALLOWED.includes(file.type)) {
-            alert('Apenas imagens são permitidas.');
-            return;
-        }
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Máximo 2MB permitidos.');
-            return;
-        }
+        const error = await validateImageFile(file);
+        if (error) { alert(error); return; }
 
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -670,7 +643,13 @@ export default function Create() {
         }
     };
 
+    // Fix 4: Rate limiting — bloqueia spam de criação de invites
     const handleSave = async () => {
+        const { allowed, waitSeconds } = checkRateLimit('create_invite');
+        if (!allowed) {
+            alert(`Criaste demasiados invites recentemente. Aguarda ${waitSeconds} segundos e tenta novamente.`);
+            return;
+        }
         setIsSaving(true);
         const result = await saveQuiz();
         setIsSaving(false);
@@ -753,19 +732,15 @@ export default function Create() {
                         {!currentStep.gif && (
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                                 <span className="text-xs font-bold text-gray-400 uppercase block mb-2">Imagem / GIF (Opcional)</span>
+                                {/* Fix 6: validateAndSetGifUrl */}
                                 <input
                                     value={''}
-                                    onChange={(e) => {
-                                        const url = e.target.value;
-                                        const SAFE = ['giphy.com', 'tenor.com', 'imgur.com', 'media.tenor.com'];
-                                        try {
-                                            if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
-                                                alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
-                                                return;
-                                            }
-                                        } catch { }
-                                        updateQuestion(currentStep.id, { gif: url });
-                                    }}
+                                    onChange={(e) =>
+                                        validateAndSetGifUrl(
+                                            e.target.value,
+                                            (url) => updateQuestion(currentStep.id, { gif: url })
+                                        )
+                                    }
                                     placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />
@@ -818,19 +793,15 @@ export default function Create() {
                         {!currentStep.gif && (
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                                 <span className="text-xs font-bold text-gray-400 uppercase block mb-2">GIF Debaixo das Estrelas (Opcional)</span>
+                                {/* Fix 6: validateAndSetGifUrl */}
                                 <input
                                     value={''}
-                                    onChange={(e) => {
-                                        const url = e.target.value;
-                                        const SAFE = ['giphy.com', 'tenor.com', 'imgur.com', 'media.tenor.com'];
-                                        try {
-                                            if (url && !SAFE.some(d => new URL(url).hostname.includes(d))) {
-                                                alert('Por segurança, usa apenas links do Giphy, Tenor ou Imgur.');
-                                                return;
-                                            }
-                                        } catch { }
-                                        updateQuestion(currentStep.id, { gif: url });
-                                    }}
+                                    onChange={(e) =>
+                                        validateAndSetGifUrl(
+                                            e.target.value,
+                                            (url) => updateQuestion(currentStep.id, { gif: url })
+                                        )
+                                    }
                                     placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />

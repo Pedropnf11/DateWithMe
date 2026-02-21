@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-export default function FinalMessage({ message, herName, onAccept, isSubmitting, selectedDate }) {
+export default function FinalMessage({ message, onAccept, isSubmitting, selectedDate }) {
   const [accepted, setAccepted] = useState(false);
   const [noClicks, setNoClicks] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -14,7 +14,6 @@ export default function FinalMessage({ message, herName, onAccept, isSubmitting,
     "Isso não existe aqui",
     "Sério?? 😭",
     "O botão diz que não 💅",
-    "Força, tu consegues!",
   ];
 
   const formatDate = (dateStr) => {
@@ -76,11 +75,7 @@ export default function FinalMessage({ message, herName, onAccept, isSubmitting,
             <div className="absolute top-3 left-3 text-3xl opacity-20">💕</div>
             <div className="absolute bottom-3 right-3 text-3xl opacity-20">💕</div>
 
-            {herName && (
-              <p className="text-[10px] font-black text-pink-400 uppercase tracking-widest mb-3">
-                Para {herName} 💝
-              </p>
-            )}
+
             <p className="text-base font-bold text-gray-700 leading-relaxed italic">
               &quot;{message || 'Mal posso esperar para te ver! 💕'}&quot;
             </p>

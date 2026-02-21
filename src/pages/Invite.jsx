@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 import { resolveActiveSteps } from '../components/Invite/utils';
+import { checkRateLimit } from '../utils/security';
 import SuccessView from '../components/Invite/SuccessView';
 import SummaryStep from '../components/Invite/Steps/SummaryStep';
 import QuestionStep from '../components/Invite/Steps/QuestionStep';
@@ -85,6 +86,12 @@ export default function Invite() {
     };
 
     const submitResponse = async (accepted) => {
+        // Fix 4: Rate limiting — evitar spam de respostas
+        const { allowed, waitSeconds } = checkRateLimit('submit_response');
+        if (!allowed) {
+            alert(`Demasiadas respostas enviadas. Aguarda ${waitSeconds} segundos.`);
+            return;
+        }
         setIsSubmitting(true);
         if (accepted) {
             confetti({
