@@ -80,25 +80,25 @@ const useSurpriseStore = create((set, get) => ({
       herName,
     };
 
+    // Usar RPC segura que devolve creator_key sem expor via SELECT público
     const { data, error } = await supabase
-      .from('invites')
-      .insert([{ content, status: 'active' }])
-      .select()
-      .single();
+      .rpc('create_invite', { p_content: content });
 
     if (error) {
-      console.error('Supabase Error:', error);
+      if (import.meta.env.DEV) console.error('Supabase Error:', error);
       return { error: 'Erro ao criar convite surpresa. Tenta novamente.' };
     }
 
+    const invite = Array.isArray(data) ? data[0] : data;
+
     // Security Fix: Store key in session storage
-    sessionStorage.setItem(`ck_${data.id}`, data.creator_key);
+    sessionStorage.setItem(`ck_${invite.id}`, invite.creator_key);
 
     return {
       success: true,
-      id: data.id,
-      publicLink: `/surpresa/${data.id}`,
-      privateLink: `/resultado/${data.id}`,
+      id: invite.id,
+      publicLink: `/surpresa/${invite.id}`,
+      privateLink: `/resultado/${invite.id}`,
     };
   },
 }));

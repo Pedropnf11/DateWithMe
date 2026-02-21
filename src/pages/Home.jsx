@@ -215,22 +215,19 @@ export default function Home() {
         setIsSaving(true);
         try {
             const { data, error } = await supabase
-                .from('invites')
-                .insert([{
-                    content: {
+                .rpc('create_invite', {
+                    p_content: {
                         type: 'flirt-deck',
                         deckData: deckData
-                    },
-                    status: 'active'
-                }])
-                .select()
-                .single();
+                    }
+                });
 
             if (error) throw error;
 
-            const url = `${window.location.origin}/flirt-deck/${data.id}`;
+            const invite = Array.isArray(data) ? data[0] : data;
+            const url = `${window.location.origin}/flirt-deck/${invite.id}`;
             setGeneratedLink(url);
-            window.open(url, '_blank');
+            window.open(url, '_blank', 'noopener,noreferrer');
 
         } catch (err) {
             console.error('Error generating link:', err);

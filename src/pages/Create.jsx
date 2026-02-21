@@ -990,7 +990,7 @@ export default function Create() {
                                 </div>
                             </div>
 
-                            <button onClick={() => window.location.href = createdLinks.privateLink} className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-pink-200 uppercase tracking-widest text-xs">
+                            <button onClick={() => navigate(createdLinks.privateLink)} className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-pink-200 uppercase tracking-widest text-xs">
                                 Ir para o Painel →
                             </button>
                         </div>

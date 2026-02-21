@@ -1,6 +1,6 @@
 // ── Card 3: Pistas Misteriosas ──────────────────────────────────────────────
 // Ela revela as pistas uma a uma — mas nunca consegue ter a certeza do que vai fazer!
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Unlock } from 'lucide-react';
 

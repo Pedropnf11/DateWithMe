@@ -52,35 +52,31 @@ const useQuizStore = create((set, get) => ({
         // Validação básica
         if (!quizData.questions.length) return { error: 'Adiciona pelo menos uma pergunta!' };
 
+        // Usar RPC segura que devolve creator_key sem expor via SELECT público
         const { data, error } = await supabase
-            .from('invites')
-            .insert([
-                {
-                    // O "content" é a tal coluna mágica JSONB
-                    content: {
-                        templateId: quizData.templateId,
-                        title: quizData.title,
-                        steps: quizData.questions
-                    },
-                    status: 'active'
+            .rpc('create_invite', {
+                p_content: {
+                    templateId: quizData.templateId,
+                    title: quizData.title,
+                    steps: quizData.questions
                 }
-            ])
-            .select()
-            .single();
+            });
 
         if (error) {
-            console.error('Supabase Error:', error);
+            if (import.meta.env.DEV) console.error('Supabase Error:', error);
             return { error: 'Ocorreu um erro técnico ao guardar. Tenta novamente.' };
         }
 
-        // Security Fix: Store key in local storage, not (just) URL
-        localStorage.setItem(`ck_${data.id}`, data.creator_key);
+        const invite = Array.isArray(data) ? data[0] : data;
+
+        // Security Fix: Store key in local storage
+        localStorage.setItem(`ck_${invite.id}`, invite.creator_key);
 
         // Retorna os links gerados
         return {
             success: true,
-            publicLink: `/convite/${data.id}`,
-            privateLink: `/resultado/${data.id}`
+            publicLink: `/convite/${invite.id}`,
+            privateLink: `/resultado/${invite.id}`
         };
     }
 }));

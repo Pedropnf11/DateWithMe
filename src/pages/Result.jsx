@@ -47,9 +47,9 @@ export default function Result() {
 
             setLoading(true);
 
-            // 1. Fetch invite info (publicly available fields only)
+            // 1. Fetch invite info via view pública (sem creator_key)
             const { data: inviteData, error: inviteError } = await supabase
-                .from('invites')
+                .from('invites_public')
                 .select('id, content, status, created_at')
                 .eq('id', id)
                 .single();

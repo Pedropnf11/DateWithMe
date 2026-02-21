@@ -28,7 +28,7 @@ export default function WordGuess({ inviteId, onDone }) {
 
   useEffect(() => {
     async function fetchLocation() {
-      const { data, error } = await supabase.rpc('reveal_location', { p_invite_id: inviteId });
+      const { data, error } = await supabase.rpc('get_game_location', { p_invite_id: inviteId });
       if (!error && data) setLocation(data);
       setLoading(false);
     }

@@ -16,8 +16,6 @@ function App() {
         <Route path="/resultado/:id" element={<Result />} />
         <Route path="/flirt-deck" element={<FlirtPreviewPage />} />
         <Route path="/flirt-deck/:id" element={<FlirtPreviewPage />} />
-        <Route path="/flirt-preview" element={<FlirtPreviewPage />} />
-        {/* ── Modo Surpresa ── */}
         <Route path="/criar-surpresa" element={<SurpriseCreate />} />
         <Route path="/surpresa/:id" element={<SurpriseInvite />} />
       </Routes>

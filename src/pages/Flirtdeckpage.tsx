@@ -19,7 +19,7 @@ export default function FlirtDeckPage() {
     async function fetchData() {
       if (isId) {
         const { data: invite, error: dbError } = await supabase
-          .from('invites')
+          .from('invites_public')
           .select('content')
           .eq('id', id)
           .single();
