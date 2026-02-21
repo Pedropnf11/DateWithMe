@@ -18,16 +18,14 @@ export default function FlirtDeckPage() {
 
     async function fetchData() {
       if (isId) {
-        const { data: invite, error: dbError } = await supabase
-          .from('invites_public')
-          .select('content')
-          .eq('id', id)
-          .single();
+        const { data: results, error: dbError } = await supabase.rpc('get_safe_invite', { p_invite_id: id });
 
-        if (dbError || !invite) {
+        if (dbError || !results || results.length === 0) {
           setError(true);
           return;
         }
+
+        const invite = results[0];
         if (invite.content?.type === 'flirt-deck') {
           setData(invite.content.deckData);
         } else {

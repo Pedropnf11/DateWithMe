@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import iconPromess from "../../../assets/emote/icon_promess.png";
+import iconPromess from "../../../assets/emote/icon_promess.webp";
 import { supabase } from "../../../lib/supabase";
 
 interface RateMeSlidProps {

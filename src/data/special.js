@@ -11,32 +11,36 @@
 // A função resolveActiveSteps() em utils.js interpreta estas regras com base em
 // { startTime, endTime } guardados na resposta do step_date.
 
-import f_italian from '../assets/foods/f_italian.png';
-import f_sushi from '../assets/foods/f_sushi.png';
-import f_francesinha from '../assets/foods/f_francesinha.png';
-import f_mexican from '../assets/foods/f_mexican.png';
-import f_coffe from '../assets/foods/f_coffe.png';
-import f_icook_m from '../assets/foods/f-icook_m.png';
-import f_icookHome_n from '../assets/foods/f_icookHome_n.png';
-import f_hamburger from '../assets/foods/f_hamburger.png';
+import f_italian from '../assets/foods/f_italian.webp';
+import f_sushi from '../assets/foods/f_sushi.webp';
+import f_francesinha from '../assets/foods/f_francesinha.webp';
+import f_mexican from '../assets/foods/f_mexican.webp';
+import f_coffe from '../assets/foods/f_coffe.webp';
+import f_icook_m from '../assets/foods/f-icook_m.webp';
+import f_icookHome_n from '../assets/foods/f_icookHome_n.webp';
+import f_hamburger from '../assets/foods/f_hamburger.webp';
 
-import a_icecream from '../assets/activities/a_icecream.png';
-import a_Gameroom from '../assets/activities/a_Gameroom.png';
-import a_MovieHouse from '../assets/activities/a_MovieHouse.png';
-import a_aquashow from '../assets/activities/a_aquashow.png';
-import a_bar_n from '../assets/activities/a_bar_n.png';
-import a_bowlling from '../assets/activities/a_bowlling.png';
-import a_cinema from '../assets/activities/a_cinema.png';
-import a_gameHome_img from '../assets/activities/a_gameHome_img.png';
-import a_golf from '../assets/activities/a_golf.png';
-import a_museu from '../assets/activities/a_museu.png';
-import a_painting from '../assets/activities/a_painting.png';
-import a_piquenique from '../assets/activities/a_piquenique.png';
-import a_reading from '../assets/activities/a_reading.png';
-import a_videogames from '../assets/activities/a_videogames.png';
-import a_walk_n from '../assets/activities/a_walk_n.png';
-import a_disco from '../assets/activities/a_disco_n.png';
-import a_açai from '../assets/activities/a_açai.png';
+import a_icecream from '../assets/activities/a_icecream.webp';
+import a_Gameroom from '../assets/activities/a_Gameroom.webp';
+import a_MovieHouse from '../assets/activities/a_MovieHouse.webp';
+import a_aquashow from '../assets/activities/a_aquashow.webp';
+import a_bar_n from '../assets/activities/a_bar_n.webp';
+import a_bowlling from '../assets/activities/a_bowlling.webp';
+import a_cinema from '../assets/activities/a_cinema.webp';
+import a_gameHome_img from '../assets/activities/a_gameHome_img.webp';
+import a_golf from '../assets/activities/a_golf.webp';
+import a_museu from '../assets/activities/a_museu.webp';
+import a_painting from '../assets/activities/a_painting.webp';
+import a_piquenique from '../assets/activities/a_piquenique.webp';
+import a_reading from '../assets/activities/a_reading.webp';
+import a_videogames from '../assets/activities/a_videogames.webp';
+import a_walk_n from '../assets/activities/a_walk_n.webp';
+import a_disco from '../assets/activities/a_disco_n.webp';
+import a_açai from '../assets/activities/a_açai.webp';
+
+// Local GIFs WebP
+import invite_special from '../assets/gifs/invite_special.webp';
+import calendar_wait from '../assets/gifs/calendar_wait.webp';
 
 export const TEMPLATE_SPECIAL = {
     id: 'special',
@@ -51,7 +55,7 @@ export const TEMPLATE_SPECIAL = {
             stepLabel: 'PASSO 1. O CONVITE',
             title: 'Queres passar uma noite especial comigo? ✨',
             subtitle: "Diz que sim — não te vais arrepender 😏",
-            gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHp3ZDlwbG9zbzIzanU4dWFyYWt0ZGNsN292d2RweHZtYjE1azdrYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sWBzg2D15WwQjHcxbt/giphy.gif',
+            gif: invite_special,
             config: {
                 noButtonBehavior: 'growing_yes',
                 noUnlocksAfter: 5,
@@ -81,6 +85,8 @@ export const TEMPLATE_SPECIAL = {
                 calendarMessage: 'Para ti arranjo sempre tempo 💕',
                 creatorNote: 'Mal posso esperar para te ver! 💕',
                 timeRangeMode: true, // Always true for special
+                libertyMessage: 'Para ti tenho todo o tempo do mundo...',
+                libertyGif: calendar_wait,
             }
         },
 

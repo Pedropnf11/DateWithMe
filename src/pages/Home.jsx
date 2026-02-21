@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { Star, Heart, Calendar, Play, X, ChevronRight, Trash2, Plus, Copy, Check, Smartphone, Tablet, User, Info, AlertCircle, Quote, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-import heroCouple1 from '../assets/home/hero-couple.png';
-import heroCouple2 from '../assets/home/hero-couple-2.png';
+import heroCouple1 from '../assets/home/hero-couple.webp';
+import heroCouple2 from '../assets/home/hero-couple-2.webp';
 
 // ── Import do FlirtDeck real (com prop compact) ──────────────────
 import FlirtDeck from './FlirtDeck';

@@ -52,13 +52,22 @@ const useQuizStore = create((set, get) => ({
         // Validação básica
         if (!quizData.questions.length) return { error: 'Adiciona pelo menos uma pergunta!' };
 
+        // Limpar propriedades de UI (que começam com _) antes de guardar
+        const cleanedSteps = quizData.questions.map(q => {
+            const cleaned = { ...q };
+            Object.keys(cleaned).forEach(key => {
+                if (key.startsWith('_')) delete cleaned[key];
+            });
+            return cleaned;
+        });
+
         // Usar RPC segura que devolve creator_key sem expor via SELECT público
         const { data, error } = await supabase
             .rpc('create_invite', {
                 p_content: {
                     templateId: quizData.templateId,
                     title: quizData.title,
-                    steps: quizData.questions
+                    steps: cleanedSteps
                 }
             });
 

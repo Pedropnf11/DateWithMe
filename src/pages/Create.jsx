@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { buildCalendarDays, WEEKDAYS, MONTH_NAMES } from '../utils/calendarUtils';
 // Fix 3, 4, 6: import das utilidades de segurança centralizadas
 import { validateImageFile, validateAndSetGifUrl, checkRateLimit } from '../utils/security';
+import danceGirlDefault from '../assets/gifs/dance_girl_default.webp';
 
 // Calendar helpers previously here are now in utils/calendarUtils.js
 
@@ -77,7 +78,7 @@ function CalendarStep({ step, updateQuestion }) {
     const toggleFullCalendar = () => {
         const newMode = mode === 'liberty' ? 'suggestions' : 'liberty';
         const defaultMsg = 'Para ti tenho todo o tempo do mundo...';
-        const defaultGif = 'https://media.tenor.com/CAtqFqK_2i0AAAAd/dance-girl.gif';
+        const defaultGif = danceGirlDefault;
 
         updateQuestion(step.id, {
             config: {
@@ -159,23 +160,46 @@ function CalendarStep({ step, updateQuestion }) {
                         </div>
 
                         <div className="space-y-1">
-                            <span className="text-[9px] font-black text-gray-300 uppercase ml-2 tracking-widest">GIF URL</span>
+                            <span className="text-[9px] font-black text-gray-300 uppercase ml-2 tracking-widest">Vibe do Convite</span>
                             <div className="flex items-center gap-3">
-                                {config.libertyGif && (
-                                    <img src={config.libertyGif} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" alt="Preview" />
+                                {config.libertyGif && !step._showGifInput ? (
+                                    <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-full">
+                                        <img src={config.libertyGif} className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm" alt="Preview" />
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black text-gray-800 uppercase tracking-tighter">GIF Selecionado</p>
+                                            <button
+                                                onClick={() => updateQuestion(step.id, { _showGifInput: true })}
+                                                className="text-[9px] font-black text-pink-500 uppercase tracking-widest hover:underline"
+                                            >
+                                                Trocar GIF
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 space-y-2">
+                                        <input
+                                            autoFocus={step._showGifInput}
+                                            value={config.libertyGif?.startsWith('/src') ? '' : (config.libertyGif || '')}
+                                            onChange={(e) =>
+                                                validateAndSetGifUrl(
+                                                    e.target.value,
+                                                    (url) => updateQuestion(step.id, { config: { ...config, libertyGif: url }, _showGifInput: false })
+                                                )
+                                            }
+                                            onBlur={() => { if (config.libertyGif) updateQuestion(step.id, { _showGifInput: false }); }}
+                                            placeholder="Cola o link do GIF (tenor, giphy...)"
+                                            className="w-full bg-white px-4 py-3 rounded-xl border border-gray-100 text-[10px] text-gray-400 font-mono outline-none focus:border-pink-300 transition-all shadow-sm"
+                                        />
+                                        {step._showGifInput && (
+                                            <button
+                                                onClick={() => updateQuestion(step.id, { _showGifInput: false })}
+                                                className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mx-auto"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
-                                {/* Fix 6: validateAndSetGifUrl usa endsWith — não bypassável com evil-giphy.com */}
-                                <input
-                                    value={config.libertyGif || ''}
-                                    onChange={(e) =>
-                                        validateAndSetGifUrl(
-                                            e.target.value,
-                                            (url) => updateQuestion(step.id, { config: { ...config, libertyGif: url } })
-                                        )
-                                    }
-                                    placeholder="Link do GIF..."
-                                    className="flex-1 bg-white px-4 py-3 rounded-xl border border-gray-100 text-[10px] text-gray-400 font-mono outline-none focus:border-pink-300 transition-all shadow-sm"
-                                />
                             </div>
                         </div>
                     </div>
@@ -353,16 +377,15 @@ function HappyGifStep({ step, updateQuestion }) {
 
             {mode === 'url' && (
                 <div className="space-y-3">
-                    {/* Fix 6: validateAndSetGifUrl usa endsWith — não bypassável */}
                     <input
                         autoFocus
-                        value={step.gif || ''}
+                        value={step.gif?.startsWith('/src') ? '' : (step.gif || '')}
                         onChange={(e) => validateAndSetGifUrl(e.target.value, handleUrlChange)}
-                        placeholder="Paste GIF / image URL here..."
+                        placeholder="Cola o link do GIF (tenor, giphy...)"
                         className="w-full text-center text-sm p-3 rounded-xl border-2 border-gray-200 focus:border-pink-500 outline-none"
                     />
-                    <button onClick={() => { setMode(null); updateQuestion(step.id, { gif: null }); }} className="text-xs text-gray-400 hover:text-red-400">
-                        ← Back
+                    <button onClick={() => { setMode(null); }} className="text-xs text-gray-400 hover:text-red-400">
+                        ← Voltar
                     </button>
                 </div>
             )}
@@ -716,34 +739,43 @@ export default function Create() {
                             placeholder="Type your question..."
                         />
 
-                        {/* GIF visible below the question */}
-                        {currentStep.gif && (
-                            <div className="relative inline-block">
-                                <img src={currentStep.gif} className="mx-auto h-48 rounded-2xl shadow-lg object-cover max-w-full" alt="Question GIF" />
-                                <button
-                                    onClick={() => updateQuestion(currentStep.id, { gif: null })}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md hover:bg-red-600"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        )}
-
-                        {!currentStep.gif && (
-                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <span className="text-xs font-bold text-gray-400 uppercase block mb-2">Imagem / GIF (Opcional)</span>
-                                {/* Fix 6: validateAndSetGifUrl */}
+                        {!currentStep.gif || currentStep._showGifInput ? (
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+                                <span className="text-xs font-bold text-gray-400 uppercase block">Imagem / GIF (Opcional)</span>
                                 <input
-                                    value={''}
+                                    autoFocus={currentStep._showGifInput}
+                                    value={currentStep.gif?.startsWith('/src') ? '' : (currentStep.gif || '')}
                                     onChange={(e) =>
                                         validateAndSetGifUrl(
                                             e.target.value,
-                                            (url) => updateQuestion(currentStep.id, { gif: url })
+                                            (url) => updateQuestion(currentStep.id, { gif: url, _showGifInput: false })
                                         )
                                     }
+                                    onBlur={() => { if (currentStep.gif) updateQuestion(currentStep.id, { _showGifInput: false }); }}
                                     placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />
+                                {currentStep._showGifInput && (
+                                    <button onClick={() => updateQuestion(currentStep.id, { _showGifInput: false })} className="text-[10px] font-bold text-gray-400 uppercase">Cancelar</button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="relative inline-block group">
+                                <img src={currentStep.gif} className="mx-auto h-48 rounded-2xl shadow-lg object-cover max-w-full" alt="Question GIF" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() => updateQuestion(currentStep.id, { _showGifInput: true })}
+                                        className="bg-white text-pink-500 px-4 py-2 rounded-full text-xs font-black shadow-lg hover:scale-105 transition-transform"
+                                    >
+                                        TROCAR GIF
+                                    </button>
+                                    <button
+                                        onClick={() => updateQuestion(currentStep.id, { gif: null })}
+                                        className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:scale-105 transition-transform"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -777,34 +809,43 @@ export default function Create() {
                             {[1, 2, 3, 4, 5].map(i => <StarIcon key={i} filled={true} />)}
                         </div>
 
-                        {/* GIF below stars */}
-                        {currentStep.gif && (
-                            <div className="relative inline-block">
-                                <img src={currentStep.gif} className="mx-auto h-48 rounded-2xl shadow-lg object-cover max-w-full" alt="Rating GIF" />
-                                <button
-                                    onClick={() => updateQuestion(currentStep.id, { gif: null })}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md hover:bg-red-600"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        )}
-
-                        {!currentStep.gif && (
-                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <span className="text-xs font-bold text-gray-400 uppercase block mb-2">GIF Debaixo das Estrelas (Opcional)</span>
-                                {/* Fix 6: validateAndSetGifUrl */}
+                        {!currentStep.gif || currentStep._showGifInput ? (
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+                                <span className="text-xs font-bold text-gray-400 uppercase block">GIF Debaixo das Estrelas (Opcional)</span>
                                 <input
-                                    value={''}
+                                    autoFocus={currentStep._showGifInput}
+                                    value={currentStep.gif?.startsWith('/src') ? '' : (currentStep.gif || '')}
                                     onChange={(e) =>
                                         validateAndSetGifUrl(
                                             e.target.value,
-                                            (url) => updateQuestion(currentStep.id, { gif: url })
+                                            (url) => updateQuestion(currentStep.id, { gif: url, _showGifInput: false })
                                         )
                                     }
+                                    onBlur={() => { if (currentStep.gif) updateQuestion(currentStep.id, { _showGifInput: false }); }}
                                     placeholder="Cola o link do GIF ou imagem..."
                                     className="w-full text-sm p-2 rounded-lg border border-gray-200 focus:border-pink-400 outline-none text-center"
                                 />
+                                {currentStep._showGifInput && (
+                                    <button onClick={() => updateQuestion(currentStep.id, { _showGifInput: false })} className="text-[10px] font-bold text-gray-400 uppercase">Cancelar</button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="relative inline-block group">
+                                <img src={currentStep.gif} className="mx-auto h-48 rounded-2xl shadow-lg object-cover max-w-full" alt="Rating GIF" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() => updateQuestion(currentStep.id, { _showGifInput: true })}
+                                        className="bg-white text-pink-500 px-4 py-2 rounded-full text-xs font-black shadow-lg hover:scale-105 transition-transform"
+                                    >
+                                        TROCAR GIF
+                                    </button>
+                                    <button
+                                        onClick={() => updateQuestion(currentStep.id, { gif: null })}
+                                        className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:scale-105 transition-transform"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
