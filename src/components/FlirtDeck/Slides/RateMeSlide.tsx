@@ -249,15 +249,20 @@ export default function RateMeSlide({
                 </div>
 
                 {/* NÚMEROS 0-10 */}
-                <div style={{ display: "flex", gap: 4 }}>
+                <div style={{
+                    display: "flex",
+                    gap: "6px 4px",
+                    flexWrap: "wrap",
+                    justifyContent: "center"
+                }}>
                     {Array.from({ length: 11 }, (_, i) => (
                         <button
                             key={i}
                             onClick={() => setRating(i)}
                             style={{
-                                flex: 1,
-                                width: 32,
-                                height: 32,
+                                width: compact ? "28px" : "32px",
+                                height: compact ? "28px" : "32px",
+                                minWidth: "28px",
                                 borderRadius: "50%",
                                 background: rating === i
                                     ? "linear-gradient(135deg, #ff8c42, #ff6b9d)"
@@ -265,7 +270,7 @@ export default function RateMeSlide({
                                 border: "1px solid rgba(255,255,255,0.2)",
                                 color: "#fff",
                                 fontWeight: 700,
-                                fontSize: 12,
+                                fontSize: compact ? "10px" : "12px",
                                 cursor: "pointer",
                                 transition: "all 0.2s ease-out",
                                 padding: 0,

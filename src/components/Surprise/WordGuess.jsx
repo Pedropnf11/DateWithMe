@@ -36,11 +36,11 @@ export default function WordGuess({ inviteId, onDone }) {
   }, [inviteId]);
 
   useEffect(() => {
-    if (isWon && !won && location) {
+    if (isWon && !won) {
       setWon(true);
       setTimeout(() => onDone?.(), 1800);
     }
-  }, [isWon, location]);
+  }, [isWon, won, onDone]);
 
   const guess = (letter) => {
     if (guessed.includes(letter) || isWon || isLost) return;
@@ -81,7 +81,7 @@ export default function WordGuess({ inviteId, onDone }) {
         {letters.map((letter, i) => {
           if (letter === ' ') return <div key={i} className="w-4" />;
           if (letter === '-') return <span key={i} className="text-2xl font-black text-gray-300 self-end pb-1">-</span>;
-          const isRevealed = guessed.includes(normalize(letter));
+          const isRevealed = guessed.includes(normalize(letter)) || isLost;
           return (
             <div key={i} className="flex flex-col items-center gap-1">
               <AnimatePresence>

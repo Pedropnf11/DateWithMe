@@ -24,7 +24,7 @@ export default function RankingStep({ step, onAnswer }) {
                     <Reorder.Item
                         key={opt._id}
                         value={opt}
-                        className="flex items-center gap-3 bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-3 cursor-grab active:cursor-grabbing active:shadow-lg active:border-pink-300 transition-all select-none"
+                        className="flex items-center gap-3 bg-white rounded-2xl shadow-sm border-2 border-gray-100 p-3 cursor-grab active:cursor-grabbing active:shadow-lg active:border-pink-300 select-none"
                     >
                         <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0">
                             {idx + 1}

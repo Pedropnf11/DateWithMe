@@ -179,7 +179,7 @@ function CalendarStep({ step, updateQuestion }) {
                                     <div className="flex-1 space-y-2">
                                         <input
                                             autoFocus={step._showGifInput}
-                                            value={config.libertyGif?.startsWith('/src') ? '' : (config.libertyGif || '')}
+                                            value={(config.libertyGif && !config.libertyGif.startsWith('http') && !config.libertyGif.startsWith('data:')) ? '' : (config.libertyGif || '')}
                                             onChange={(e) =>
                                                 validateAndSetGifUrl(
                                                     e.target.value,
@@ -379,7 +379,7 @@ function HappyGifStep({ step, updateQuestion }) {
                 <div className="space-y-3">
                     <input
                         autoFocus
-                        value={step.gif?.startsWith('/src') ? '' : (step.gif || '')}
+                        value={(step.gif && !step.gif.startsWith('http') && !step.gif.startsWith('data:')) ? '' : (step.gif || '')}
                         onChange={(e) => validateAndSetGifUrl(e.target.value, handleUrlChange)}
                         placeholder="Cola o link do GIF (tenor, giphy...)"
                         className="w-full text-center text-sm p-3 rounded-xl border-2 border-gray-200 focus:border-pink-500 outline-none"
@@ -744,7 +744,7 @@ export default function Create() {
                                 <span className="text-xs font-bold text-gray-400 uppercase block">Imagem / GIF (Opcional)</span>
                                 <input
                                     autoFocus={currentStep._showGifInput}
-                                    value={currentStep.gif?.startsWith('/src') ? '' : (currentStep.gif || '')}
+                                    value={(currentStep.gif && !currentStep.gif.startsWith('http') && !currentStep.gif.startsWith('data:')) ? '' : (currentStep.gif || '')}
                                     onChange={(e) =>
                                         validateAndSetGifUrl(
                                             e.target.value,
@@ -814,7 +814,7 @@ export default function Create() {
                                 <span className="text-xs font-bold text-gray-400 uppercase block">GIF Debaixo das Estrelas (Opcional)</span>
                                 <input
                                     autoFocus={currentStep._showGifInput}
-                                    value={currentStep.gif?.startsWith('/src') ? '' : (currentStep.gif || '')}
+                                    value={(currentStep.gif && !currentStep.gif.startsWith('http') && !currentStep.gif.startsWith('data:')) ? '' : (currentStep.gif || '')}
                                     onChange={(e) =>
                                         validateAndSetGifUrl(
                                             e.target.value,
