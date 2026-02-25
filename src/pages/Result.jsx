@@ -209,7 +209,13 @@ export default function Result() {
                                                                         <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{step.title}</span>
                                                                     </div>
                                                                     <span className="text-sm font-black text-gray-800 text-right">
-                                                                        {typeof val === 'string' ? val : (val.label || 'Opção selecionada')}
+                                                                        {(() => {
+                                                                            if (typeof val === 'string') return val;
+                                                                            if (typeof val === 'number') return `${val} ⭐`;
+                                                                            if (Array.isArray(val)) return val.join(', ');
+                                                                            if (val && typeof val === 'object') return val.label || 'Opção selecionada';
+                                                                            return String(val);
+                                                                        })()}
                                                                     </span>
                                                                 </div>
                                                             );

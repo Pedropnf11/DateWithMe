@@ -75,7 +75,7 @@ export default function Invite() {
             // Quebra-Gelo → mostra SummaryStep antes de submeter
             // Especial → submete agora e vai para success
             if (isSpecial) {
-                submitResponse(true);
+                submitResponse(true, newAnswers);
                 setPhase('success');
             } else {
                 setPhase('summary');
@@ -85,7 +85,7 @@ export default function Invite() {
         }
     };
 
-    const submitResponse = async (accepted) => {
+    const submitResponse = async (accepted, finalAnswers = null) => {
         // Fix 4: Rate limiting — evitar spam de respostas
         const { allowed, waitSeconds } = checkRateLimit('submit_response');
         if (!allowed) {
@@ -102,12 +102,14 @@ export default function Invite() {
             });
         }
 
+        const answersToSubmit = finalAnswers || answers;
+
         // Usar apenas a RPC segura 'submit_response'
         // A inserção direta na tabela 'responses' foi removida por segurança e para evitar duplicados
         await supabase.rpc('submit_response', {
             invite_uuid: id,
             p_decisao: accepted ? 'sim' : 'nao',
-            p_answers: answers,
+            p_answers: answersToSubmit,
             p_mensagem: null,
         });
 
